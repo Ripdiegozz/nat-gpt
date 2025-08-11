@@ -14,6 +14,7 @@ export interface AIContextMessage {
 
 export class ClientAIServiceAdapter implements AIService {
   private readonly endpoint: string;
+  private lastGeneratedTitle: string | null = null;
 
   constructor(config: ClientAIConfig = {}) {
     this.endpoint = config.endpoint ?? "/api/ai";
@@ -22,7 +23,7 @@ export class ClientAIServiceAdapter implements AIService {
   async generateResponse(
     prompt: string,
     context: Message[] | AIContextMessage[],
-    options?: { model?: string }
+    options?: { model?: string; isFirstMessage?: boolean }
   ): Promise<string> {
     if (!prompt.trim()) throw new Error("Prompt cannot be empty");
 
@@ -43,6 +44,7 @@ export class ClientAIServiceAdapter implements AIService {
     const body = {
       prompt,
       context: contextMessages,
+      isFirstMessage: options?.isFirstMessage || false,
       ...(options?.model && { model: options.model }),
     };
 
@@ -57,8 +59,14 @@ export class ClientAIServiceAdapter implements AIService {
       throw new Error(data.error || `AI request failed with ${res.status}`);
     }
 
-    const data = (await res.json()) as { text: string };
+    const data = (await res.json()) as { text: string; title?: string };
     if (!data.text) throw new Error("Empty response from AI");
+
+    // Store title for later retrieval if this was the first message
+    if (options?.isFirstMessage && data.title) {
+      this.lastGeneratedTitle = data.title;
+    }
+
     return data.text;
   }
 
@@ -84,15 +92,25 @@ export class ClientAIServiceAdapter implements AIService {
 
   /**
    * Generate a conversation title based on the first message
+   * Now optimized to use title from combined response when available
    */
   async generateTitle(prompt: string, model?: string): Promise<string> {
     if (!prompt.trim()) throw new Error("Prompt cannot be empty");
 
+    // If we have a recently generated title from a combined response, use it
+    if (this.lastGeneratedTitle) {
+      const title = this.lastGeneratedTitle;
+      this.lastGeneratedTitle = null; // Clear it after use
+      return title;
+    }
+
+    // Fallback: make a request with isFirstMessage flag to get combined response
+    // This should generally not happen if the UI correctly sets isFirstMessage
     const body = {
       prompt,
-      context: [], // No context needed for title generation
-      generateTitle: true,
-      ...(model && { model }), // Pass model if provided
+      context: [], // No context for title generation
+      isFirstMessage: true,
+      ...(model && { model }),
     };
 
     const res = await fetch(this.endpoint, {
@@ -109,12 +127,15 @@ export class ClientAIServiceAdapter implements AIService {
     }
 
     const data = await res.json();
-    if (!data.text) {
+    if (!data.title && !data.text) {
       throw new Error("Invalid response format");
     }
 
+    // Use extracted title if available, otherwise generate from response
+    let title = data.title || data.text.split("\n")[0] || "New Conversation";
+
     // Clean up the title and ensure it's reasonable length
-    let title = data.text.trim();
+    title = title.trim();
 
     // Remove quotes if present
     title = title.replace(/^["']|["']$/g, "");

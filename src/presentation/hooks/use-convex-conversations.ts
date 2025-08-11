@@ -4,7 +4,7 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export function useConversations() {
   const { user } = useUser();
@@ -165,6 +165,9 @@ export function useConversations() {
 
 export function useConversation(conversationId?: Id<"conversations">) {
   const { user } = useUser();
+  const [conversationError, setConversationError] = useState<string | null>(
+    null
+  );
 
   const conversation = useQuery(
     api.conversations.getConversationWithMessages,
@@ -173,9 +176,21 @@ export function useConversation(conversationId?: Id<"conversations">) {
       : "skip"
   );
 
+  // Handle conversation errors (like "Conversation not found")
+  useEffect(() => {
+    if (conversation === null && conversationId) {
+      // Conversation was not found
+      setConversationError("Conversation not found");
+    } else if (conversation) {
+      // Conversation loaded successfully, clear any errors
+      setConversationError(null);
+    }
+  }, [conversation, conversationId]);
+
   return {
     conversation,
     messages: conversation?.messages || [],
     isLoading: conversation === undefined && conversationId !== undefined,
+    error: conversationError,
   };
 }

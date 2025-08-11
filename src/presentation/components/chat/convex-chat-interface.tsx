@@ -32,6 +32,7 @@ interface ChatData {
   conversations: Conversation[];
   isLoadingConversations: boolean;
   conversationsError: string | null;
+  error: string | null;
   setActiveConversation: (id: string) => void;
   sendMessage: (content: string) => Promise<boolean>;
   isSendingMessage: boolean;
@@ -62,6 +63,7 @@ export function ConvexChatInterface({
     conversations,
     isLoadingConversations,
     conversationsError,
+    error,
     setActiveConversation,
     sendMessage,
     isSendingMessage,
@@ -96,7 +98,12 @@ export function ConvexChatInterface({
     if (sendMessageError) {
       toast.error(sendMessageError);
     }
-  }, [conversationsError, sendMessageError]);
+    // Handle conversation not found - redirect to chat home
+    if (error && error.includes("Conversation not found")) {
+      toast.error("Conversation not found, redirecting to chat home");
+      window.location.href = "/chat"; // Use window.location for immediate redirect
+    }
+  }, [conversationsError, sendMessageError, error]);
 
   const handleSendMessage = async (content: string) => {
     const success = await sendMessage(content);

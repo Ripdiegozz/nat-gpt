@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import OpenAI from "openai";
 import { getOpenRouterConfig } from "@/src/infrastructure/config/openrouter";
 import { readFile } from "fs/promises";
@@ -7,7 +8,7 @@ import { join } from "path";
 // Force Node.js runtime so the OpenAI SDK can run server-side
 export const runtime = "nodejs";
 
-const MODEL_DEFAULT = "google/gemini-2.0-flash-exp:free";
+const MODEL_DEFAULT = "compound-beta";
 
 // Load NatGPT system prompt
 async function getSystemPrompt(): Promise<string> {
@@ -66,16 +67,25 @@ type PostBody = {
   prompt: string;
   context?: Array<{ role: "user" | "assistant"; content: string }>;
   model?: string;
-  generateTitle?: boolean; // New flag for title generation
+  isFirstMessage?: boolean; // Flag to indicate if this is the first message in a conversation
 };
 
 export async function POST(req: NextRequest) {
   try {
+    // Validate authentication
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized - Please sign in" },
+        { status: 401 }
+      );
+    }
+
     const {
       prompt,
       context = [],
       model,
-      generateTitle = false,
+      isFirstMessage = false,
     } = (await req.json()) as PostBody;
 
     if (!prompt || !prompt.trim()) {
@@ -88,20 +98,8 @@ export async function POST(req: NextRequest) {
     const client = getClient();
     const selectedModel = model || MODEL_DEFAULT;
 
-    // Different system prompts for title generation vs. regular chat
-    let systemPrompt: string;
-    if (generateTitle) {
-      systemPrompt = `You are a title generator. Generate a short, descriptive title (2-6 words) for a conversation based on the user's first message. The title should be clear, concise, and capture the main topic or intent. 
-
-Examples:
-- User: "How do I learn React?" → Title: "Learning React Guide"
-- User: "Debug this Python function" → Title: "Python Function Debug"
-- User: "Plan my vacation to Japan" → Title: "Japan Vacation Planning"
-
-Respond ONLY with the title, nothing else.`;
-    } else {
-      systemPrompt = await getSystemPrompt();
-    }
+    // Always use the regular system prompt (which now includes title generation instructions)
+    const systemPrompt = await getSystemPrompt();
 
     // Build messages array with system prompt first
     const messages: Array<{
@@ -109,19 +107,14 @@ Respond ONLY with the title, nothing else.`;
       content: string;
     }> = [{ role: "system", content: systemPrompt }];
 
-    // For title generation, only use the first message
-    if (generateTitle) {
-      messages.push({ role: "user", content: prompt });
-    } else {
-      // Add conversation context for regular chat
-      for (const msg of context) {
-        if (msg && (msg.role === "user" || msg.role === "assistant")) {
-          messages.push({ role: msg.role, content: msg.content });
-        }
+    // Add conversation context for regular chat
+    for (const msg of context) {
+      if (msg && (msg.role === "user" || msg.role === "assistant")) {
+        messages.push({ role: msg.role, content: msg.content });
       }
-      // Add current user prompt
-      messages.push({ role: "user", content: prompt });
     }
+    // Add current user prompt
+    messages.push({ role: "user", content: prompt });
 
     // Retry logic for rate limiting
     let completion: OpenAI.Chat.Completions.ChatCompletion | null = null;
@@ -130,6 +123,11 @@ Respond ONLY with the title, nothing else.`;
 
     while (retries < maxRetries) {
       try {
+        console.log({
+          selectedModel,
+          messages,
+          isFirstMessage,
+        });
         completion = await client.chat.completions.create({
           model: selectedModel,
           messages,
@@ -178,7 +176,30 @@ Respond ONLY with the title, nothing else.`;
       );
     }
 
-    return NextResponse.json({ text });
+    // Extract title if present (for first messages)
+    let responseText = text;
+    let title: string | undefined;
+
+    if (isFirstMessage && text.startsWith("Subject: ")) {
+      const lines = text.split("\n");
+      const subjectLine = lines[0];
+
+      // Extract title from "Subject: Title Here" format
+      title = subjectLine.replace("Subject: ", "").trim();
+
+      // Remove the subject line from the response
+      responseText = lines.slice(1).join("\n").trim();
+
+      // Remove any leading empty lines
+      responseText = responseText.replace(/^\n+/, "");
+    }
+
+    const response: { text: string; title?: string } = { text: responseText };
+    if (title) {
+      response.title = title;
+    }
+
+    return NextResponse.json(response);
   } catch (error: unknown) {
     console.log("AI request error:", error);
     const message = (error as Error)?.message || "Unknown error";

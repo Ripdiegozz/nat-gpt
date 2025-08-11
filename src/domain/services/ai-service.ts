@@ -5,14 +5,14 @@ export interface AIService {
    * Generates a response from the AI based on the prompt and conversation context
    * @param prompt The user's message/prompt
    * @param context Array of previous messages for conversation context
-   * @param options Optional parameters including model selection
+   * @param options Optional parameters including model selection and first message flag
    * @returns Promise that resolves to the AI's response text
    * @throws Error if the AI service fails to generate a response
    */
   generateResponse(
     prompt: string,
     context: Message[],
-    options?: { model?: string }
+    options?: { model?: string; isFirstMessage?: boolean }
   ): Promise<string>;
 
   /**
@@ -33,4 +33,13 @@ export interface AIService {
    * @returns Estimated number of tokens
    */
   estimateTokens(text: string): number;
+
+  /**
+   * Generates a conversation title based on the first message
+   * @param prompt The first user message in the conversation
+   * @param model Optional model to use for title generation
+   * @returns Promise that resolves to a conversation title
+   * @throws Error if title generation fails
+   */
+  generateTitle(prompt: string, model?: string): Promise<string>;
 }

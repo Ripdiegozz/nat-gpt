@@ -32,24 +32,36 @@ export function useConversationPage(conversationId: string) {
     }
   }, [isLoaded, conversationId, chatData.setActiveConversation, router]);
 
+  // Handle conversation not found error - redirect to chat home
+  useEffect(() => {
+    if (chatData.error && chatData.error.includes("Conversation not found")) {
+      console.log("Conversation not found, redirecting to /chat");
+      router.push("/chat");
+    }
+  }, [chatData.error, router]);
+
   // Transform the chat data to match ConvexChatData interface
   const transformedChatData: ConvexChatData = {
     activeConversationId: chatData.activeConversationId,
-    activeConversation: chatData.activeConversation ? {
-      _id: chatData.activeConversation._id,
-      title: chatData.activeConversation.title,
-      userId: chatData.activeConversation.userId || chatData.activeConversation.clerkUserId,
-      _creationTime: chatData.activeConversation._creationTime,
-    } : null,
+    activeConversation: chatData.activeConversation
+      ? {
+          _id: chatData.activeConversation._id,
+          title: chatData.activeConversation.title,
+          userId:
+            chatData.activeConversation.userId ||
+            chatData.activeConversation.clerkUserId,
+          _creationTime: chatData.activeConversation._creationTime,
+        }
+      : null,
     conversations: chatData.conversations
       .filter((conv): conv is NonNullable<typeof conv> => conv !== null)
-      .map(conv => ({
+      .map((conv) => ({
         _id: conv._id,
         title: conv.title,
         userId: conv.userId || conv.clerkUserId,
         _creationTime: conv._creationTime,
       })),
-    messages: chatData.messages.map(message => ({
+    messages: chatData.messages.map((message) => ({
       _id: message.id.toString() as Id<"messages">,
       content: message.content,
       role: message.role as "user" | "assistant",
@@ -70,7 +82,11 @@ export function useConversationPage(conversationId: string) {
   };
 
   // Create adapter instance
-  const adapter = new ConversationPageAdapter(transformedChatData, router, conversationId);
+  const adapter = new ConversationPageAdapter(
+    transformedChatData,
+    router,
+    conversationId
+  );
   const adaptedChatData = adapter.adapt();
 
   return {

@@ -50,8 +50,11 @@ export function ModelSelector({
             className="h-8 px-2 text-xs gap-1 mb-1"
             aria-label="Select AI model"
           >
-            {React.createElement(model.icon, { className: "h-3 w-3" })}
-            <span className="hidden sm:inline">{model.name}</span>
+            {model?.icon &&
+              React.createElement(model.icon, { className: "h-3 w-3" })}
+            <span className="hidden sm:inline">
+              {model?.name || "Select Model"}
+            </span>
             <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
@@ -66,9 +69,10 @@ export function ModelSelector({
             >
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  {React.createElement(modelInfo.icon, {
-                    className: "h-4 w-4",
-                  })}
+                  {modelInfo?.icon &&
+                    React.createElement(modelInfo.icon, {
+                      className: "h-4 w-4",
+                    })}
                   <div className="font-base text-sm truncate">
                     {modelInfo.name}
                   </div>
@@ -101,10 +105,13 @@ export function ModelSelector({
               aria-label="Select AI model"
             >
               <div className="flex items-center gap-3">
-                {React.createElement(model.icon, { className: "h-4 w-4" })}
+                {model?.icon &&
+                  React.createElement(model.icon, { className: "h-4 w-4" })}
                 <div className="text-left">
-                  <div className="font-base text-sm">{model.name}</div>
-                  {showDescription && (
+                  <div className="font-base text-sm">
+                    {model?.name || "Select Model"}
+                  </div>
+                  {showDescription && model && (
                     <div className="text-xs text-foreground/60">
                       {model.provider} • {model.description}
                     </div>
@@ -123,9 +130,10 @@ export function ModelSelector({
                 onClick={() => handleModelSelect(modelId)}
                 className="flex items-start gap-3 h-auto py-3"
               >
-                {React.createElement(modelInfo.icon, {
-                  className: "h-4 w-4 text-main-foreground shrink-0 mt-0.5",
-                })}
+                {modelInfo?.icon &&
+                  React.createElement(modelInfo.icon, {
+                    className: "h-4 w-4 text-main-foreground shrink-0 mt-0.5",
+                  })}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between w-full">
                     <div className="font-base text-sm">{modelInfo.name}</div>

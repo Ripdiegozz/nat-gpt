@@ -122,8 +122,13 @@ export class ConvexChatDataAdapter {
         ? {
             id: this.chatData.activeConversation._id.toString(),
             title: this.chatData.activeConversation.title,
-            createdAt: new Date(this.chatData.activeConversation._creationTime).toISOString(),
-            updatedAt: new Date(this.chatData.activeConversation.lastMessageTime || this.chatData.activeConversation._creationTime).toISOString(),
+            createdAt: new Date(
+              this.chatData.activeConversation._creationTime
+            ).toISOString(),
+            updatedAt: new Date(
+              this.chatData.activeConversation.lastMessageTime ||
+                this.chatData.activeConversation._creationTime
+            ).toISOString(),
             lastMessageTime: this.chatData.activeConversation.lastMessageTime
               ? new Date(this.chatData.activeConversation.lastMessageTime)
               : undefined,

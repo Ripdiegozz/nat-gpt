@@ -4,38 +4,46 @@ import { Code2, Zap, Sparkles, Brain } from "lucide-react";
 
 // Available AI models
 export const AVAILABLE_MODELS = {
-  "qwen/qwen3-coder:free": {
-    id: "qwen/qwen3-coder:free",
-    name: "Qwen 3 Coder",
-    provider: "Qwen",
-    description: "Fast coding assistant with excellent performance",
-    free: true,
-    icon: Code2,
-  },
-  "openai/gpt-oss-20b:free": {
-    id: "openai/gpt-oss-20b:free",
-    name: "GPT OSS 20B",
-    provider: "OpenAI",
-    description: "Open source GPT model for general tasks",
+  // "qwen/qwen-2.5-32b-instruct": {
+  //   id: "qwen/qwen-2.5-32b-instruct",
+  //   name: "Qwen 2.5 32B",
+  //   provider: "Qwen",
+  //   description: "Advanced Qwen model for complex reasoning and coding",
+  //   free: true,
+  //   icon: Code2,
+  // },
+  // "deepseek/deepseek-r1-distill-llama-70b": {
+  //   id: "deepseek/deepseek-r1-distill-llama-70b",
+  //   name: "DeepSeek R1 Distill 70B",
+  //   provider: "DeepSeek",
+  //   description: "Distilled reasoning model based on Llama architecture",
+  //   free: true,
+  //   icon: Brain,
+  // },
+  // "google/gemma-2-9b-it": {
+  //   id: "google/gemma-2-9b-it",
+  //   name: "Gemma 2 9B IT",
+  //   provider: "Google",
+  //   description: "Instruction-tuned Gemma model for general tasks",
+  //   free: true,
+  //   icon: Sparkles,
+  // },
+  "compound-beta": {
+    id: "compound-beta",
+    name: "Compound Beta",
+    provider: "Compound AI",
+    description: "Beta experimental model for advanced reasoning",
     free: true,
     icon: Zap,
   },
-  "google/gemini-2.0-flash-exp:free": {
-    id: "google/gemini-2.0-flash-exp:free",
-    name: "Gemini 2.0 Flash",
-    provider: "Google",
-    description: "Experimental fast Gemini model",
-    free: true,
-    icon: Sparkles,
-  },
-  "tngtech/deepseek-r1t2-chimera:free": {
-    id: "tngtech/deepseek-r1t2-chimera:free",
-    name: "DeepSeek Chimera",
-    provider: "TNG Tech",
-    description: "Advanced reasoning model for complex tasks",
-    free: true,
-    icon: Brain,
-  },
+  // "meta-llama/llama-3.1-8b-instruct": {
+  //   id: "meta-llama/llama-3.1-8b-instruct",
+  //   name: "Llama 3.1 8B Instant",
+  //   provider: "Meta",
+  //   description: "Fast and efficient Llama model for quick responses",
+  //   free: true,
+  //   icon: Brain,
+  // },
 } as const;
 
 export type ModelId = keyof typeof AVAILABLE_MODELS;
@@ -93,7 +101,7 @@ type ChatSettingsActions = {
 
 // Default settings
 const DEFAULT_SETTINGS = {
-  selectedModel: "qwen/qwen3-coder:free" as ModelId,
+  selectedModel: "compound-beta" as ModelId,
   maxTokens: 4096,
   temperature: 0.7,
   language: "en",
@@ -161,10 +169,22 @@ export const useChatSettings = create<ChatSettings>()(
 export const useSelectedModel = () => {
   const selectedModel = useChatSettings((state) => state.selectedModel);
   const setSelectedModel = useChatSettings((state) => state.setSelectedModel);
+
+  // Fallback to first available model if current selection is invalid
+  const validModel = AVAILABLE_MODELS[selectedModel]
+    ? selectedModel
+    : (Object.keys(AVAILABLE_MODELS)[0] as ModelId);
+  const model = AVAILABLE_MODELS[validModel];
+
+  // Update to valid model if current is invalid
+  if (selectedModel !== validModel) {
+    setSelectedModel(validModel);
+  }
+
   return {
-    selectedModel,
+    selectedModel: validModel,
     setSelectedModel,
-    model: AVAILABLE_MODELS[selectedModel],
+    model,
   };
 };
 

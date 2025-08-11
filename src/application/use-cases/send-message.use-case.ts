@@ -2,6 +2,7 @@ import { ConversationRepository } from "../../domain/repositories/conversation-r
 import { AIService } from "../../domain/services/ai-service";
 import { ConversationId } from "../../domain/value-objects/conversation-id";
 import { Message } from "../../domain/entities/message";
+import { MessageRole } from "../../domain/enums/message-role";
 import {
   SendMessageRequest,
   SendMessageResponse,
@@ -99,11 +100,18 @@ export class SendMessageUseCase {
       // Convert readonly array to regular array for the AI service
       const contextArray = Array.from(context);
 
+      // Determine if this is the first message in the conversation
+      // Count assistant messages to see if this is the first exchange
+      const assistantMessages = contextArray.filter(
+        (msg) => msg.role === MessageRole.ASSISTANT
+      );
+      const isFirstMessage = assistantMessages.length === 0;
+
       // Generate response
       const response = await this.aiService.generateResponse(
         prompt,
         contextArray,
-        { model }
+        { model, isFirstMessage }
       );
 
       if (!response || response.trim().length === 0) {

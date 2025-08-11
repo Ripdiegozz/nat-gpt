@@ -34,9 +34,8 @@ export function useConvexChat() {
   } = useConversations();
 
   // Active conversation
-  const { conversation: activeConversation } = useConversation(
-    activeConversationId || undefined
-  );
+  const { conversation: activeConversation, error: conversationError } =
+    useConversation(activeConversationId || undefined);
 
   // Messages for active conversation
   const {
@@ -59,7 +58,7 @@ export function useConvexChat() {
   const messages = ConvexMessageAdapter.toDomainMessages(convexMessages);
 
   // Combined error handling
-  const error = conversationsError || messagesError;
+  const error = conversationsError || messagesError || conversationError;
   const clearAllErrors = useCallback(() => {
     clearConversationsError();
     clearMessagesError();
@@ -120,7 +119,7 @@ export function useConvexChat() {
         const aiResponse = await aiService.generateResponse(
           content,
           contextMessages,
-          { model: selectedModel }
+          { model: selectedModel, isFirstMessage: isNewConversation }
         );
 
         // Add AI response using direct mutation
@@ -138,6 +137,7 @@ export function useConvexChat() {
         // Generate and update title for new conversations
         if (isNewConversation) {
           try {
+            // Use the title that was extracted from the combined response
             const generatedTitle = await aiService.generateTitle(
               content,
               selectedModel
