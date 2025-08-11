@@ -75,6 +75,7 @@ export interface AdaptedChatData {
   isLoadingConversations: boolean;
   conversationsError: string | null;
   sendMessageError: string | null;
+  error: string | null;
   isSendingMessage: boolean;
   isCreatingConversation: boolean;
   setActiveConversation: (id: string) => void;
@@ -140,6 +141,7 @@ export class ConvexChatDataAdapter {
       isLoadingConversations: this.chatData.isLoadingConversations,
       conversationsError: this.chatData.conversationsError,
       sendMessageError: this.chatData.sendMessageError,
+      error: this.chatData.conversationsError || this.chatData.sendMessageError,
       isSendingMessage: this.chatData.isSendingMessage,
       isCreatingConversation: this.chatData.isCreatingConversation,
       setActiveConversation: this.createSetActiveConversationHandler(),
