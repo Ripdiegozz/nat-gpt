@@ -22,11 +22,11 @@ describe('MessageId', () => {
     })
 
     it('should throw error for null value', () => {
-      expect(() => new MessageId(null as any)).toThrow('MessageId cannot be empty')
+      expect(() => new MessageId(null as unknown as string)).toThrow('MessageId cannot be empty')
     })
 
     it('should throw error for undefined value', () => {
-      expect(() => new MessageId(undefined as any)).toThrow('MessageId cannot be empty')
+      expect(() => new MessageId(undefined as unknown as string)).toThrow('MessageId cannot be empty')
     })
   })
 

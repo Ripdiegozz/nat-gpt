@@ -16,7 +16,7 @@ import {
   AVAILABLE_MODELS,
   type ModelId,
 } from "../../stores/chat-settings.store";
-import { ChevronDown, Check, Cpu } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 
 interface ModelSelectorProps {
   className?: string;

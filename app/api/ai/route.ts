@@ -124,7 +124,7 @@ Respond ONLY with the title, nothing else.`;
     }
 
     // Retry logic for rate limiting
-    let completion: any = null;
+    let completion: OpenAI.Chat.Completions.ChatCompletion | null = null;
     let retries = 0;
     const maxRetries = 3;
 
@@ -137,8 +137,9 @@ Respond ONLY with the title, nothing else.`;
           // max_tokens is optional; OpenRouter enforces model caps
         });
         break; // Success, exit retry loop
-      } catch (error: any) {
-        if (error.status === 429 && retries < maxRetries - 1) {
+      } catch (error: unknown) {
+        const apiError = error as { status?: number; message?: string };
+        if (apiError.status === 429 && retries < maxRetries - 1) {
           retries++;
           const delay = Math.pow(2, retries) * 1000; // Exponential backoff: 2s, 4s, 8s
           console.log(

@@ -4,12 +4,10 @@ import { useUser } from "@clerk/nextjs";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
-import { useConvexUser } from "./use-convex-user";
 import { useState } from "react";
 
 export function useConversations() {
   const { user } = useUser();
-  const { convexUser } = useConvexUser();
 
   const conversations = useQuery(
     api.conversations.getUserConversations,

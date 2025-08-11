@@ -1,25 +1,26 @@
-import { ConversationDTO } from './conversation.dto'
+import { ConversationDTO } from "./conversation.dto";
 
 export interface CreateConversationRequest {
-  title?: string
+  title?: string;
 }
 
 export interface CreateConversationResponse {
-  conversation: ConversationDTO
+  conversation: ConversationDTO;
 }
 
 export interface GetConversationsRequest {
-  // No parameters needed for getting all conversations
+  // No parameters needed for getting all conversations - using object type for future extensibility
+  [key: string]: never;
 }
 
 export interface GetConversationsResponse {
-  conversations: ConversationDTO[]
+  conversations: ConversationDTO[];
 }
 
 export interface DeleteConversationRequest {
-  conversationId: string
+  conversationId: string;
 }
 
 export interface DeleteConversationResponse {
-  success: boolean
+  success: boolean;
 }

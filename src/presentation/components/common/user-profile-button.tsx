@@ -14,7 +14,7 @@ interface UserProfileButtonProps {
 }
 
 export function UserProfileButton({ className }: UserProfileButtonProps) {
-  const { clerkUser, convexUser, isLoaded } = useConvexUser();
+  const { clerkUser, isLoaded } = useConvexUser();
   const { signOut } = useClerk();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);

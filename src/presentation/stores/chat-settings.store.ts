@@ -107,7 +107,7 @@ const DEFAULT_SETTINGS = {
 // Create the store with persistence
 export const useChatSettings = create<ChatSettings>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       // Default state
       ...DEFAULT_SETTINGS,
 

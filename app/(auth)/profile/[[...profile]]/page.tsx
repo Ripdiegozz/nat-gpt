@@ -1,6 +1,7 @@
 "use client";
 
 import { UserProfile } from "@clerk/nextjs";
+import Link from "next/link";
 import { useConvexUser } from "@/src/presentation/hooks/use-convex-user";
 import { ChatSettingsPanel } from "@/src/presentation/components/settings/chat-settings-panel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -159,12 +160,12 @@ export default function ProfilePage() {
 
         {/* Navigation Back */}
         <div className="mt-6 sm:mt-8 text-center">
-          <a
+          <Link
             href="/chat"
             className="inline-flex items-center px-4 py-2 bg-secondary-background text-foreground border-2 border-border rounded-base hover:bg-main hover:text-main-foreground transition-all font-base touch-manipulation"
           >
             ← Back to Chat
-          </a>
+          </Link>
         </div>
       </div>
     </div>

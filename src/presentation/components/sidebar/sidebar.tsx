@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ConversationList } from "./conversation-list";
@@ -6,11 +6,12 @@ import { useUISettings } from "../../stores/chat-settings.store";
 import { cn } from "@/lib/utils";
 import { Plus, X, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { MessageDTO } from "@/src/application/dtos/message.dto";
 
 interface ConversationData {
   id: string;
   title: string;
-  messages: any[];
+  messages: MessageDTO[];
   createdAt: string;
   updatedAt: string;
   messageCount?: number;
@@ -117,7 +118,9 @@ export function Sidebar({
       <div
         className={cn(
           "flex flex-col h-full w-80 transition-opacity duration-300",
-          isCollapsed && !isMobile ? "opacity-0 pointer-events-none" : "opacity-100"
+          isCollapsed && !isMobile
+            ? "opacity-0 pointer-events-none"
+            : "opacity-100"
         )}
       >
         {/* Header */}

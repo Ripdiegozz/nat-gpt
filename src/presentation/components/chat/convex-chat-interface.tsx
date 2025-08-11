@@ -3,17 +3,33 @@ import React, { useState, useEffect, useCallback } from "react";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { Sidebar } from "../sidebar";
-import { UserProfileButton, ModelSelector, ThemeSelector } from "../common";
+import { UserProfileButton, ThemeSelector } from "../common";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useUISettings } from "../../stores/chat-settings.store";
 
 // Types for the chat data
+interface Message {
+  id: string;
+  content: string;
+  role: "user" | "assistant";
+  timestamp: string;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: string;
+  updatedAt: string;
+  messageCount?: number;
+}
+
 interface ChatData {
   activeConversationId: string | null;
-  activeConversation: any;
-  conversations: any[];
+  activeConversation: Conversation | null;
+  conversations: Conversation[];
   isLoadingConversations: boolean;
   conversationsError: string | null;
   setActiveConversation: (id: string) => void;
@@ -140,13 +156,6 @@ export function ConvexChatInterface({
       setSidebarOpen(false);
     }
     return conversationId;
-  };
-
-  const handleDeleteConversation = async (conversationId: string) => {
-    const success = await deleteConversation(conversationId);
-    if (!success) {
-      toast.error("Failed to delete conversation. Please try again.");
-    }
   };
 
   return (

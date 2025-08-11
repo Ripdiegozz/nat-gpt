@@ -97,7 +97,8 @@ export function useConvexChat() {
           // This is important for SSR routing pattern
         } else {
           // Check if the active conversation is empty (should generate title)
-          const currentMessages = ConvexMessageAdapter.toDomainMessages(convexMessages);
+          const currentMessages =
+            ConvexMessageAdapter.toDomainMessages(convexMessages);
           if (currentMessages.length === 0) {
             isNewConversation = true;
           }
@@ -186,11 +187,11 @@ export function useConvexChat() {
     [createNewConversation]
   );
 
-  // Delete conversation and clear if active
-  const deleteConversation = useCallback(
-    async (conversationId: Id<"conversations">): Promise<boolean> => {
+  // Delete conversation and clear if active (with string ID wrapper)
+  const deleteConversationWrapper = useCallback(
+    async (conversationId: string): Promise<boolean> => {
       try {
-        await deleteConversationById(conversationId);
+        await deleteConversationById(conversationId as Id<"conversations">);
         if (activeConversationId === conversationId) {
           setActiveConversationId(null);
         }
@@ -203,12 +204,26 @@ export function useConvexChat() {
     [deleteConversationById, activeConversationId]
   );
 
+  // Update conversation title wrapper (with string ID wrapper)
+  const updateConversationTitleWrapper = useCallback(
+    async (conversationId: string, title: string): Promise<void> => {
+      try {
+        await updateConversationTitle(
+          conversationId as Id<"conversations">,
+          title
+        );
+      } catch (err) {
+        console.error("Failed to update conversation title:", err);
+        throw err;
+      }
+    },
+    [updateConversationTitle]
+  );
+
   // Set active conversation
   const setActiveConversation = useCallback((conversationId: string | null) => {
     setActiveConversationId(conversationId as Id<"conversations"> | null);
   }, []);
-
-
 
   return {
     // User
@@ -229,8 +244,8 @@ export function useConvexChat() {
     // Actions
     sendMessage,
     createNewConversation: createAndSetConversation,
-    deleteConversation,
-    updateConversationTitle,
+    deleteConversation: deleteConversationWrapper,
+    updateConversationTitle: updateConversationTitleWrapper,
     archiveConversation,
     shareConversation,
 

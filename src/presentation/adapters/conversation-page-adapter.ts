@@ -1,6 +1,8 @@
 import { useRouter } from "next/navigation";
-import { Id } from "../../../convex/_generated/dataModel";
-import { ConvexChatDataAdapter, ConvexChatData, AdaptedChatData } from "./convex-chat-data-adapter";
+import {
+  ConvexChatDataAdapter,
+  ConvexChatData,
+} from "./convex-chat-data-adapter";
 
 export class ConversationPageAdapter extends ConvexChatDataAdapter {
   constructor(
@@ -28,7 +30,7 @@ export class ConversationPageAdapter extends ConvexChatDataAdapter {
   protected createDeleteConversationHandler() {
     return async (convIdToDelete: string): Promise<boolean> => {
       try {
-        await this.chatData.deleteConversation(convIdToDelete as any);
+        await this.chatData.deleteConversation(convIdToDelete);
         // If we deleted the current conversation, navigate to chat home
         if (convIdToDelete === this.conversationId) {
           this.router.push("/chat");

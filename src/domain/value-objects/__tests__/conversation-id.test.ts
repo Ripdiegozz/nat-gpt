@@ -22,11 +22,11 @@ describe('ConversationId', () => {
     })
 
     it('should throw error for null value', () => {
-      expect(() => new ConversationId(null as any)).toThrow('ConversationId cannot be empty')
+      expect(() => new ConversationId(null as unknown as string)).toThrow('ConversationId cannot be empty')
     })
 
     it('should throw error for undefined value', () => {
-      expect(() => new ConversationId(undefined as any)).toThrow('ConversationId cannot be empty')
+      expect(() => new ConversationId(undefined as unknown as string)).toThrow('ConversationId cannot be empty')
     })
   })
 

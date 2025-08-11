@@ -74,23 +74,6 @@ export function ConversationItem({
     setNewTitle(conversation.title);
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return date.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } else if (diffInHours < 24 * 7) {
-      return date.toLocaleDateString([], { weekday: "short" });
-    } else {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    }
-  };
-
   if (isCollapsed) {
     return (
       <Button
@@ -211,8 +194,8 @@ export function ConversationItem({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The conversation "
-              {conversation.title}" will be permanently deleted.
+              This action cannot be undone. The conversation &ldquo;
+              {conversation.title}&rdquo; will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

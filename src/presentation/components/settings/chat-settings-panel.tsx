@@ -27,18 +27,7 @@ import {
 } from "../../stores/chat-settings.store";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import {
-  RotateCcw,
-  Save,
-  ChevronDown,
-  Sun,
-  Moon,
-  Monitor,
-  Code2,
-  Zap,
-  Sparkles,
-  Brain,
-} from "lucide-react";
+import { RotateCcw, Save, ChevronDown, Sun, Moon, Monitor } from "lucide-react";
 import { toast } from "sonner";
 
 interface ChatSettingsPanelProps {
@@ -48,10 +37,6 @@ interface ChatSettingsPanelProps {
 const LANGUAGE_LABELS = {
   en: "English",
   // es: "Español",
-  // fr: "Français",
-  // de: "Deutsch",
-  // it: "Italiano",
-  // pt: "Português",
 } as const;
 
 const THEME_LABELS = {
@@ -64,13 +49,6 @@ const THEME_ICONS = {
   light: Sun,
   dark: Moon,
   system: Monitor,
-} as const;
-
-const MODEL_ICONS = {
-  "qwen/qwen3-coder:free": Code2,
-  "openai/gpt-oss-20b:free": Zap,
-  "google/gemini-2.0-flash-exp:free": Sparkles,
-  "tngtech/deepseek-r1t2-chimera:free": Brain,
 } as const;
 
 export function ChatSettingsPanel({ className }: ChatSettingsPanelProps) {
@@ -114,7 +92,7 @@ export function ChatSettingsPanel({ className }: ChatSettingsPanelProps) {
           <ModelSelector showDescription />
 
           {/* Max Tokens */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="maxTokens">
               Max Tokens: {maxTokens.toLocaleString()}
             </Label>
@@ -136,10 +114,10 @@ export function ChatSettingsPanel({ className }: ChatSettingsPanelProps) {
               Maximum number of tokens in the AI response. Higher values allow
               longer responses but use more resources.
             </p>
-          </div>
+          </div> */}
 
           {/* Temperature */}
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="temperature">Temperature: {temperature}</Label>
             <Input
               id="temperature"
@@ -159,7 +137,7 @@ export function ChatSettingsPanel({ className }: ChatSettingsPanelProps) {
               Controls randomness in AI responses. Lower values are more focused
               and deterministic.
             </p>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
 

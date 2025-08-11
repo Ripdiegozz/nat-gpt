@@ -1,11 +1,28 @@
 import { useRouter } from "next/navigation";
 import { Id } from "../../../convex/_generated/dataModel";
 
+// Define types for Convex data structures
+interface ConvexConversation {
+  _id: Id<"conversations">;
+  title: string;
+  userId: string;
+  _creationTime: number;
+  lastMessageTime?: number;
+}
+
+interface ConvexMessage {
+  _id: Id<"messages">;
+  content: string;
+  role: "user" | "assistant";
+  conversationId: Id<"conversations">;
+  _creationTime: number;
+}
+
 export interface ConvexChatData {
   activeConversationId: string | null;
-  activeConversation: any;
-  conversations: any[];
-  messages: any[];
+  activeConversation: ConvexConversation | null | undefined;
+  conversations: ConvexConversation[];
+  messages: ConvexMessage[];
   isLoadingConversations: boolean;
   conversationsError: string | null;
   sendMessageError: string | null;
@@ -23,10 +40,38 @@ export interface ConvexChatData {
   clearAllErrors: () => void;
 }
 
+// Define adapted conversation structure
+interface AdaptedConversation {
+  id: string;
+  title: string;
+  messages: Array<{
+    id: string;
+    content: string;
+    role: "user" | "assistant";
+    timestamp: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+  messageCount?: number;
+}
+
 export interface AdaptedChatData {
   activeConversationId: string | null;
-  activeConversation: any;
-  conversations: any[];
+  activeConversation: {
+    id: string;
+    title: string;
+    createdAt: string;
+    updatedAt: string;
+    lastMessageTime?: Date;
+    messages: Array<{
+      id: string;
+      content: string;
+      role: "user" | "assistant";
+      timestamp: string;
+    }>;
+    messageCount?: number;
+  } | null;
+  conversations: AdaptedConversation[];
   isLoadingConversations: boolean;
   conversationsError: string | null;
   sendMessageError: string | null;
@@ -42,28 +87,31 @@ export interface AdaptedChatData {
 
 export class ConvexChatDataAdapter {
   constructor(
-    private chatData: ConvexChatData,
-    private router: ReturnType<typeof useRouter>
+    protected chatData: ConvexChatData,
+    protected router: ReturnType<typeof useRouter>
   ) {}
 
-  protected transformMessages(messages: any[]) {
+  protected transformMessages(messages: ConvexMessage[]) {
     return messages.map((msg) => ({
-      id: msg.id.toString(),
+      id: msg._id.toString(),
       content: msg.content,
-      role: msg.role.toString().toLowerCase() as "user" | "assistant",
-      timestamp: msg.timestamp.toISOString(),
+      role: msg.role as "user" | "assistant",
+      timestamp: new Date(msg._creationTime).toISOString(),
     }));
   }
 
-  protected transformConversations(conversations: any[]) {
+  protected transformConversations(conversations: ConvexConversation[]) {
     return conversations
       .filter((conv): conv is NonNullable<typeof conv> => conv !== null)
       .map((conv) => ({
-        id: conv._id,
+        id: conv._id.toString(),
         title: conv.title,
         messages: [], // Messages are loaded separately for the active conversation
-        createdAt: new Date(conv.createdAt).toISOString(),
-        updatedAt: new Date(conv.updatedAt).toISOString(),
+        createdAt: new Date(conv._creationTime).toISOString(),
+        updatedAt: new Date(
+          conv.lastMessageTime || conv._creationTime
+        ).toISOString(),
+        messageCount: 0, // Can be calculated if needed
       }));
   }
 
@@ -72,8 +120,15 @@ export class ConvexChatDataAdapter {
       activeConversationId: this.chatData.activeConversationId,
       activeConversation: this.chatData.activeConversation
         ? {
-            ...this.chatData.activeConversation,
+            id: this.chatData.activeConversation._id.toString(),
+            title: this.chatData.activeConversation.title,
+            createdAt: new Date(this.chatData.activeConversation._creationTime).toISOString(),
+            updatedAt: new Date(this.chatData.activeConversation.lastMessageTime || this.chatData.activeConversation._creationTime).toISOString(),
+            lastMessageTime: this.chatData.activeConversation.lastMessageTime
+              ? new Date(this.chatData.activeConversation.lastMessageTime)
+              : undefined,
             messages: this.transformMessages(this.chatData.messages),
+            messageCount: this.chatData.messages.length,
           }
         : null,
       conversations: this.transformConversations(this.chatData.conversations),
@@ -136,7 +191,7 @@ export class ConvexChatDataAdapter {
   protected createDeleteConversationHandler() {
     return async (conversationId: string): Promise<boolean> => {
       try {
-        await this.chatData.deleteConversation(conversationId as any);
+        await this.chatData.deleteConversation(conversationId);
         return true;
       } catch (err) {
         console.error("Failed to delete conversation:", err);
@@ -151,10 +206,7 @@ export class ConvexChatDataAdapter {
       newTitle: string
     ): Promise<boolean> => {
       try {
-        await this.chatData.updateConversationTitle(
-          conversationId as any,
-          newTitle
-        );
+        await this.chatData.updateConversationTitle(conversationId, newTitle);
         return true;
       } catch (err) {
         console.error("Failed to rename conversation:", err);
