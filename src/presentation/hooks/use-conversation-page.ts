@@ -7,6 +7,7 @@ import { useConvexChat } from "./use-convex-chat";
 import { ConversationPageAdapter } from "../adapters/conversation-page-adapter";
 import { type ConvexChatData } from "../adapters/convex-chat-data-adapter";
 import { Id } from "../../../convex/_generated/dataModel";
+import { safeConvexId, isConvexValidationError } from "../../lib/convex-utils";
 
 export function useConversationPage(conversationId: string) {
   const { isLoaded } = useConvexUser();
@@ -22,21 +23,28 @@ export function useConversationPage(conversationId: string) {
       chatData.setActiveConversation
     ) {
       // Validate that conversationId is a valid Convex ID format
-      try {
-        chatData.setActiveConversation(conversationId as Id<"conversations">);
-      } catch (error) {
-        console.error("Invalid conversation ID:", conversationId, error);
-        // Redirect to chat home if invalid ID
+      const validConvexId = safeConvexId(conversationId, "conversations");
+      
+      if (validConvexId) {
+        chatData.setActiveConversation(validConvexId);
+      } else {
+        console.error("Invalid conversation ID format:", conversationId);
+        // Redirect to chat home if invalid ID format
         router.push("/chat");
       }
     }
   }, [isLoaded, conversationId, chatData.setActiveConversation, router]);
 
-  // Handle conversation not found error - redirect to chat home
+  // Handle conversation errors - redirect to chat home
   useEffect(() => {
-    if (chatData.error && chatData.error.includes("Conversation not found")) {
-      console.log("Conversation not found, redirecting to /chat");
-      router.push("/chat");
+    if (chatData.error) {
+      if (
+        chatData.error.includes("Conversation not found") ||
+        isConvexValidationError(chatData.error)
+      ) {
+        console.log("Conversation error detected, redirecting to /chat:", chatData.error);
+        router.push("/chat");
+      }
     }
   }, [chatData.error, router]);
 

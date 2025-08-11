@@ -98,8 +98,10 @@ export const getMessages = query({
   handler: async (ctx, args) => {
     // Verify access to conversation
     const conversation = await ctx.db.get(args.conversationId);
+    
+    // Return empty array if conversation doesn't exist (instead of throwing error)
     if (!conversation) {
-      throw new Error("Conversation not found");
+      return [];
     }
 
     const hasAccess =
@@ -317,8 +319,17 @@ export const getMessageStats = query({
   handler: async (ctx, args) => {
     // Verify access
     const conversation = await ctx.db.get(args.conversationId);
+    
+    // Return empty stats if conversation doesn't exist
     if (!conversation) {
-      throw new Error("Conversation not found");
+      return {
+        totalMessages: 0,
+        userMessages: 0,
+        assistantMessages: 0,
+        systemMessages: 0,
+        totalTokens: 0,
+        averageResponseTime: 0,
+      };
     }
 
     const hasAccess =

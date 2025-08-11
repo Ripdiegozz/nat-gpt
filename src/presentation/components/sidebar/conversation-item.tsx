@@ -91,7 +91,7 @@ export function ConversationItem({
   return (
     <div
       className={cn(
-        "group relative rounded-base border-2 transition-all cursor-pointer w-full max-w-full overflow-hidden",
+        "group relative rounded-base border-2 transition-all cursor-pointer w-full max-w-full overflow-hidden h-14",
         isActive
           ? "bg-background border-border/30 hover:border-border/50"
           : "bg-secondary-background/50 text-foreground border-border/50 hover:bg-secondary-background/70",
@@ -99,26 +99,44 @@ export function ConversationItem({
       )}
       onClick={onSelect}
     >
-      <div className="flex items-start gap-3 p-3 w-full pr-10">
-        <MessageCircle className="h-4 w-4 mt-0.5 shrink-0" />
+      <div className="flex items-center gap-3 px-3 py-2 h-full pr-16">
+        <MessageCircle className="h-4 w-4 shrink-0" />
 
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-heading truncate">
-              {conversation.title}
-            </h3>
-          </div>
+        <div className="flex-1 min-w-0 overflow-hidden relative h-full flex items-center">
+          <h3
+            className="text-sm font-heading leading-tight"
+            style={{
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: "100%",
+            }}
+          >
+            {conversation.title.length > 22
+              ? `${conversation.title.substring(0, 22)}...`
+              : conversation.title}
+          </h3>
+
+          {/* Gradient fade effect for long text - adapts to background color */}
+          <div
+            className={cn(
+              "absolute right-0 top-0 bottom-0 w-12 pointer-events-none",
+              isActive
+                ? "bg-gradient-to-l from-background to-transparent"
+                : "bg-gradient-to-l from-secondary-background/50 group-hover:from-secondary-background/70 to-transparent"
+            )}
+          />
         </div>
       </div>
 
-      {/* Actions - Only visible on hover, positioned at the right */}
-      <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+      {/* Actions - Always visible, positioned at the right */}
+      <div className="absolute top-1/2 right-3 -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-200 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="neutral"
               size="icon"
-              className="h-7 w-7 bg-background/80 hover:bg-background border border-border/50 shadow-sm"
+              className="h-6 w-6 bg-background hover:bg-background/80 border border-border/50 shadow-sm hover:shadow-md"
               aria-label="More options"
               onClick={(e) => e.stopPropagation()}
             >

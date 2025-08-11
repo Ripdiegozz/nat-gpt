@@ -148,8 +148,9 @@ export const updateConversationTitle = mutation({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
 
+    // If conversation doesn't exist, return null instead of throwing error
     if (!conversation) {
-      throw new Error("Conversation not found");
+      return null;
     }
 
     if (conversation.clerkUserId !== args.clerkUserId) {
@@ -174,8 +175,9 @@ export const archiveConversation = mutation({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
 
+    // If conversation doesn't exist, consider it already archived
     if (!conversation) {
-      throw new Error("Conversation not found");
+      return { success: true, message: "Conversation already archived" };
     }
 
     if (conversation.clerkUserId !== args.clerkUserId) {
@@ -200,8 +202,9 @@ export const deleteConversation = mutation({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
 
+    // If conversation doesn't exist, consider it already deleted (success)
     if (!conversation) {
-      throw new Error("Conversation not found");
+      return { success: true, message: "Conversation already deleted" };
     }
 
     if (conversation.clerkUserId !== args.clerkUserId) {
