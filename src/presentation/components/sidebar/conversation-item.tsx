@@ -94,12 +94,12 @@ export function ConversationItem({
         "group relative rounded-base border-2 transition-all cursor-pointer w-full max-w-full overflow-hidden",
         isActive
           ? "bg-background border-border/30 hover:border-border/50"
-          : "bg-secondary-background/50 text-foreground border-border/50",
+          : "bg-secondary-background/50 text-foreground border-border/50 hover:bg-secondary-background/70",
         className
       )}
       onClick={onSelect}
     >
-      <div className="flex items-start gap-3 p-3 w-full">
+      <div className="flex items-start gap-3 p-3 w-full pr-10">
         <MessageCircle className="h-4 w-4 mt-0.5 shrink-0" />
 
         <div className="flex-1 min-w-0 overflow-hidden">
@@ -111,14 +111,14 @@ export function ConversationItem({
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="absolute top-2 right-2 z-10">
+      {/* Actions - Only visible on hover, positioned at the right */}
+      <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="neutral"
               size="icon"
-              className="h-6 w-6 opacity-50 hover:opacity-80 bg-transparent hover:bg-secondary-background/50"
+              className="h-7 w-7 bg-background/80 hover:bg-background border border-border/50 shadow-sm"
               aria-label="More options"
               onClick={(e) => e.stopPropagation()}
             >

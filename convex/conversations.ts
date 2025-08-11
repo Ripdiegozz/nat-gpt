@@ -108,8 +108,9 @@ export const getConversationWithMessages = query({
   handler: async (ctx, args) => {
     const conversation = await ctx.db.get(args.conversationId);
 
+    // Return null instead of throwing error if conversation doesn't exist
     if (!conversation) {
-      throw new Error("Conversation not found");
+      return null;
     }
 
     // Check if user has access to this conversation

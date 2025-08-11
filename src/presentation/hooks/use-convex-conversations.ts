@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { Id } from "../../../convex/_generated/dataModel";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export function useConversations() {
   const { user } = useUser();
@@ -165,6 +166,7 @@ export function useConversations() {
 
 export function useConversation(conversationId?: Id<"conversations">) {
   const { user } = useUser();
+  const router = useRouter();
   const [conversationError, setConversationError] = useState<string | null>(
     null
   );
@@ -176,16 +178,18 @@ export function useConversation(conversationId?: Id<"conversations">) {
       : "skip"
   );
 
-  // Handle conversation errors (like "Conversation not found")
+  // Handle conversation errors and redirect if deleted
   useEffect(() => {
     if (conversation === null && conversationId) {
-      // Conversation was not found
+      // Conversation was not found (likely deleted), redirect to chat
+      console.log("Conversation not found, redirecting to /chat");
       setConversationError("Conversation not found");
+      router.push("/chat");
     } else if (conversation) {
       // Conversation loaded successfully, clear any errors
       setConversationError(null);
     }
-  }, [conversation, conversationId]);
+  }, [conversation, conversationId, router]);
 
   return {
     conversation,
