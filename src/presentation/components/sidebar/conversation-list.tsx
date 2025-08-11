@@ -8,6 +8,7 @@ interface ConversationListProps {
   activeConversationId: string | null;
   onConversationSelect: (conversationId: string) => void;
   onConversationDelete: (conversationId: string) => void;
+  onConversationRename?: (conversationId: string, newTitle: string) => void;
   isLoading?: boolean;
   isCollapsed?: boolean;
   isMobile?: boolean;
@@ -19,9 +20,9 @@ export function ConversationList({
   activeConversationId,
   onConversationSelect,
   onConversationDelete,
+  onConversationRename,
   isLoading = false,
   isCollapsed = false,
-  isMobile = false,
   className,
 }: ConversationListProps) {
   if (isLoading) {
@@ -51,17 +52,20 @@ export function ConversationList({
   }
 
   return (
-    <div className={cn("space-y-1 pb-4", className)}>
-      {conversations.map((conversation) => (
-        <ConversationItem
-          key={conversation.id}
-          conversation={conversation}
-          isActive={conversation.id === activeConversationId}
-          onSelect={() => onConversationSelect(conversation.id)}
-          onDelete={() => onConversationDelete(conversation.id)}
-          isCollapsed={isCollapsed}
-        />
-      ))}
+    <div className={cn("space-y-1 pb-4 w-full overflow-hidden", className)}>
+      {conversations
+        .filter((conversation) => conversation.id) // Filter out conversations without valid IDs
+        .map((conversation) => (
+          <ConversationItem
+            key={conversation.id}
+            conversation={conversation}
+            isActive={conversation.id === activeConversationId}
+            onSelect={() => onConversationSelect(conversation.id)}
+            onDelete={() => onConversationDelete(conversation.id)}
+            onRename={onConversationRename ? (newTitle) => onConversationRename(conversation.id, newTitle) : undefined}
+            isCollapsed={isCollapsed}
+          />
+        ))}
     </div>
   );
 }

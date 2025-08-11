@@ -55,7 +55,7 @@ export function ModelSelector({
             <ChevronDown className="h-3 w-3" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-64">
+        <DropdownMenuContent className="w-64 max-w-[90vw]">
           <DropdownMenuLabel>Select AI Model</DropdownMenuLabel>
           <DropdownMenuSeparator />
           {modelEntries.map(([modelId, modelInfo]) => (
@@ -77,7 +77,7 @@ export function ModelSelector({
                   <Check className="h-4 w-4 text-main-foreground ml-2 shrink-0" />
                 )}
               </div>
-              <div className="text-xs text-main-foreground/70 truncate pl-6">
+              <div className="text-xs text-main-foreground/70 truncate pl-6 max-w-full">
                 {modelInfo.provider} • {modelInfo.description}
               </div>
             </DropdownMenuItem>
@@ -133,7 +133,7 @@ export function ModelSelector({
                       <Check className="h-4 w-4 text-main-foreground ml-3 shrink-0" />
                     )}
                   </div>
-                  <div className="text-xs text-main-foreground/70">
+                  <div className="text-xs text-main-foreground/70 truncate">
                     {modelInfo.provider} • {modelInfo.description}
                   </div>
                 </div>

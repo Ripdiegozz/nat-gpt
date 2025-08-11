@@ -88,7 +88,7 @@ export default function ProfilePage() {
                   profile details.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="p-4 sm:p-6">
+              <CardContent className="p-2">
                 <div className="w-full overflow-hidden max-w-full">
                   <UserProfile
                     appearance={{

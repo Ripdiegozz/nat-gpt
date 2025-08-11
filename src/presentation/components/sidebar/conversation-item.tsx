@@ -2,13 +2,31 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ConversationDTO } from "../../../application/dtos/conversation.dto";
 import { cn } from "@/lib/utils";
-import { MessageCircle, Trash2, MoreHorizontal } from "lucide-react";
+import { MessageCircle, Trash2, MoreHorizontal, Edit3 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Input } from "@/components/ui/input";
 
 interface ConversationItemProps {
   conversation: ConversationDTO;
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onRename?: (newTitle: string) => void;
   isCollapsed?: boolean;
   className?: string;
 }
@@ -18,25 +36,42 @@ export function ConversationItem({
   isActive,
   onSelect,
   onDelete,
+  onRename,
   isCollapsed = false,
   className,
 }: ConversationItemProps) {
-  const [showActions, setShowActions] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [newTitle, setNewTitle] = useState(conversation.title);
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
-    onDelete();
+    e.preventDefault();
+    setShowDeleteDialog(true);
   };
 
-  const getPreviewText = () => {
-    if (conversation.messages.length === 0) {
-      return "New conversation";
+  const confirmDelete = () => {
+    onDelete();
+    setShowDeleteDialog(false);
+  };
+
+  const handleRename = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setNewTitle(conversation.title);
+    setShowRenameDialog(true);
+  };
+
+  const confirmRename = () => {
+    if (onRename && newTitle.trim() && newTitle.trim() !== conversation.title) {
+      onRename(newTitle.trim());
     }
-    const lastMessage = conversation.messages[conversation.messages.length - 1];
-    return (
-      lastMessage.content.slice(0, 50) +
-      (lastMessage.content.length > 50 ? "..." : "")
-    );
+    setShowRenameDialog(false);
+  };
+
+  const cancelRename = () => {
+    setShowRenameDialog(false);
+    setNewTitle(conversation.title);
   };
 
   const formatDate = (dateString: string) => {
@@ -73,56 +108,124 @@ export function ConversationItem({
   return (
     <div
       className={cn(
-        "group relative rounded-base border-2 transition-all cursor-pointer",
+        "group relative rounded-base border-2 transition-all cursor-pointer w-full max-w-full overflow-hidden",
         isActive
-          ? "bg-main text-main-foreground border-border shadow-shadow"
-          : "bg-background hover:bg-secondary-background border-border hover:shadow-shadow",
+          ? "bg-background border-border/30 hover:border-border/50"
+          : "bg-secondary-background/50 text-foreground border-border/50",
         className
       )}
       onClick={onSelect}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
     >
-      <div className="flex items-start gap-3 p-3">
+      <div className="flex items-start gap-3 p-3 w-full">
         <MessageCircle className="h-4 w-4 mt-0.5 shrink-0" />
 
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-1">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="flex items-center justify-between">
             <h3 className="text-sm font-heading truncate">
               {conversation.title}
             </h3>
-            <span className="text-xs opacity-70 shrink-0 ml-2">
-              {formatDate(conversation.updatedAt)}
-            </span>
-          </div>
-
-          <p className="text-xs opacity-70 line-clamp-2 font-base">
-            {getPreviewText()}
-          </p>
-
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs opacity-50">
-              {conversation.messages.length} message
-              {conversation.messages.length !== 1 ? "s" : ""}
-            </span>
           </div>
         </div>
       </div>
 
       {/* Actions */}
-      {showActions && (
-        <div className="absolute top-2 right-2 flex gap-1">
-          <Button
-            variant="neutral"
-            size="icon"
-            onClick={handleDelete}
-            className="h-6 w-6 opacity-70 hover:opacity-100"
-            aria-label="Delete conversation"
+      <div className="absolute top-2 right-2 z-10">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="neutral"
+              size="icon"
+              className="h-6 w-6 opacity-50 hover:opacity-80 bg-transparent hover:bg-secondary-background/50"
+              aria-label="More options"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-40 bg-background border-border/50"
           >
-            <Trash2 className="h-3 w-3" />
-          </Button>
-        </div>
-      )}
+            <DropdownMenuItem
+              onSelect={(e) => e.stopPropagation()}
+              onClick={handleRename}
+              className="bg-background text-foreground/80 hover:text-foreground"
+            >
+              <Edit3 className="h-3 w-3 mr-2 opacity-70" />
+              Rename
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={(e) => e.stopPropagation()}
+              onClick={handleDelete}
+              className="text-red-400/80 hover:text-red-500 hover:bg-red-50/50 focus:bg-red-50/50 bg-background"
+            >
+              <Trash2 className="h-3 w-3 mr-2 opacity-70" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Rename Dialog */}
+      <AlertDialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Rename conversation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Enter a new name for the conversation.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  confirmRename();
+                } else if (e.key === "Escape") {
+                  cancelRename();
+                }
+              }}
+              placeholder="Conversation name"
+              className="w-full"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelRename}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmRename}
+              disabled={
+                !newTitle.trim() || newTitle.trim() === conversation.title
+              }
+            >
+              Save
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The conversation "
+              {conversation.title}" will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-500/90 hover:bg-red-600/90 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

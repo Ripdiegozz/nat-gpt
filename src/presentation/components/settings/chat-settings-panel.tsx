@@ -47,11 +47,11 @@ interface ChatSettingsPanelProps {
 
 const LANGUAGE_LABELS = {
   en: "English",
-  es: "Español",
-  fr: "Français",
-  de: "Deutsch",
-  it: "Italiano",
-  pt: "Português",
+  // es: "Español",
+  // fr: "Français",
+  // de: "Deutsch",
+  // it: "Italiano",
+  // pt: "Português",
 } as const;
 
 const THEME_LABELS = {

@@ -14,6 +14,7 @@ import { api } from "../../../convex/_generated/api";
 export function useConvexChat() {
   const [activeConversationId, setActiveConversationId] =
     useState<Id<"conversations"> | null>(null);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
   const { convexUser } = useConvexUser();
   const { selectedModel } = useSelectedModel();
 
@@ -40,7 +41,6 @@ export function useConvexChat() {
   // Messages for active conversation
   const {
     messages: convexMessages,
-    isSending,
     error: messagesError,
     editMessage,
     deleteMessage,
@@ -67,7 +67,14 @@ export function useConvexChat() {
 
   // Send message with AI response
   const sendMessage = useCallback(
-    async (content: string): Promise<boolean> => {
+    async (
+      content: string
+    ): Promise<{
+      success: boolean;
+      conversationId?: string;
+      isNewConversation?: boolean;
+    }> => {
+      setIsSendingMessage(true);
       try {
         // Check if user is signed in
         if (!convexUser?.clerkId) {
@@ -85,6 +92,15 @@ export function useConvexChat() {
           conversationId = await createNewConversation(title);
           setActiveConversationId(conversationId);
           isNewConversation = true;
+
+          // Note: The navigation will be handled by the calling component
+          // This is important for SSR routing pattern
+        } else {
+          // Check if the active conversation is empty (should generate title)
+          const currentMessages = ConvexMessageAdapter.toDomainMessages(convexMessages);
+          if (currentMessages.length === 0) {
+            isNewConversation = true;
+          }
         }
 
         // Add user message using direct mutation
@@ -118,10 +134,30 @@ export function useConvexChat() {
           },
         });
 
-        return true;
+        // Generate and update title for new conversations
+        if (isNewConversation) {
+          try {
+            const generatedTitle = await aiService.generateTitle(
+              content,
+              selectedModel
+            );
+            await updateConversationTitle(conversationId, generatedTitle);
+          } catch (titleError) {
+            console.warn("Failed to generate conversation title:", titleError);
+            // Title generation failure shouldn't break the conversation flow
+          }
+        }
+
+        return {
+          success: true,
+          conversationId: conversationId,
+          isNewConversation,
+        };
       } catch (err) {
         console.error("Failed to send message:", err);
-        return false;
+        return { success: false };
+      } finally {
+        setIsSendingMessage(false);
       }
     },
     [
@@ -137,14 +173,14 @@ export function useConvexChat() {
 
   // Create new conversation and set as active
   const createAndSetConversation = useCallback(
-    async (title?: string): Promise<boolean> => {
+    async (title?: string): Promise<string | null> => {
       try {
         const conversationId = await createNewConversation(title);
         setActiveConversationId(conversationId);
-        return true;
+        return conversationId;
       } catch (err) {
         console.error("Failed to create conversation:", err);
-        return false;
+        return null;
       }
     },
     [createNewConversation]
@@ -171,6 +207,8 @@ export function useConvexChat() {
   const setActiveConversation = useCallback((conversationId: string | null) => {
     setActiveConversationId(conversationId as Id<"conversations"> | null);
   }, []);
+
+
 
   return {
     // User
@@ -203,7 +241,7 @@ export function useConvexChat() {
     removeReaction,
 
     // Loading states
-    isSendingMessage: isSending,
+    isSendingMessage,
     isCreatingConversation: isCreating,
 
     // Error handling

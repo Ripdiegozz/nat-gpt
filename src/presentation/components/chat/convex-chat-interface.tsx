@@ -6,6 +6,8 @@ import { Sidebar } from "../sidebar";
 import { UserProfileButton, ModelSelector, ThemeSelector } from "../common";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useUISettings } from "../../stores/chat-settings.store";
 
 // Types for the chat data
 interface ChatData {
@@ -18,9 +20,10 @@ interface ChatData {
   sendMessage: (content: string) => Promise<boolean>;
   isSendingMessage: boolean;
   sendMessageError: string | null;
-  createNewConversation: () => Promise<boolean>;
+  createNewConversation: () => Promise<string | null>;
   isCreatingConversation: boolean;
   deleteConversation: (id: string) => Promise<boolean>;
+  renameConversation?: (id: string, newTitle: string) => Promise<boolean>;
   clearAllErrors: () => void;
 }
 
@@ -35,6 +38,7 @@ export function ConvexChatInterface({
 }: ConvexChatInterfaceProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { sidebarCollapsed, setSidebarCollapsed } = useUISettings();
 
   const {
     activeConversationId,
@@ -49,6 +53,7 @@ export function ConvexChatInterface({
     createNewConversation,
     isCreatingConversation,
     deleteConversation,
+    renameConversation,
     clearAllErrors,
   } = chatData;
 
@@ -116,14 +121,25 @@ export function ConvexChatInterface({
     }
   };
 
-  const handleNewConversation = async () => {
-    const success = await createNewConversation();
-    if (!success) {
+  const handleNewConversation = async (): Promise<string | null> => {
+    // Check if there's already an active conversation with no messages
+    if (activeConversation && activeConversation.messages.length === 0) {
+      // Don't create a new conversation, just stay in the current empty one
+      if (isMobile) {
+        setSidebarOpen(false);
+      }
+      return activeConversation.id;
+    }
+
+    const conversationId = await createNewConversation();
+    if (!conversationId) {
       toast.error("Failed to create new conversation. Please try again.");
+      return null;
     }
     if (isMobile) {
       setSidebarOpen(false);
     }
+    return conversationId;
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
@@ -141,32 +157,51 @@ export function ConvexChatInterface({
       )}
     >
       {/* Sidebar */}
-      <div
-        className={cn(
-          "flex-shrink-0",
-          isMobile
-            ? sidebarOpen
-              ? "fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] shadow-lg"
-              : "w-0 overflow-hidden"
-            : "" // On desktop, let sidebar control its own width
-        )}
-        id="sidebar"
-        role="complementary"
-        aria-label="Conversations sidebar"
-      >
-        <Sidebar
-          activeConversationId={activeConversationId}
-          onConversationSelect={handleConversationSelect}
-          conversations={conversations}
-          isLoading={isLoadingConversations}
-          onNewConversation={createNewConversation}
-          onDeleteConversation={deleteConversation}
-          isCreatingConversation={isCreatingConversation}
-          className="h-full"
-          isMobile={isMobile}
-          onClose={() => setSidebarOpen(false)}
-        />
-      </div>
+      {isMobile ? (
+        sidebarOpen && (
+          <div
+            className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] shadow-lg flex-shrink-0"
+            id="sidebar"
+            role="complementary"
+            aria-label="Conversations sidebar"
+          >
+            <Sidebar
+              activeConversationId={activeConversationId}
+              onConversationSelect={handleConversationSelect}
+              conversations={conversations}
+              isLoading={isLoadingConversations}
+              onNewConversation={handleNewConversation}
+              onDeleteConversation={deleteConversation}
+              onRenameConversation={renameConversation}
+              isCreatingConversation={isCreatingConversation}
+              className="h-full"
+              isMobile={isMobile}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </div>
+        )
+      ) : (
+        <div
+          className="flex-shrink-0"
+          id="sidebar"
+          role="complementary"
+          aria-label="Conversations sidebar"
+        >
+          <Sidebar
+            activeConversationId={activeConversationId}
+            onConversationSelect={handleConversationSelect}
+            conversations={conversations}
+            isLoading={isLoadingConversations}
+            onNewConversation={handleNewConversation}
+            onDeleteConversation={deleteConversation}
+            onRenameConversation={renameConversation}
+            isCreatingConversation={isCreatingConversation}
+            className="h-full"
+            isMobile={isMobile}
+            onClose={() => setSidebarOpen(false)}
+          />
+        </div>
+      )}
 
       {/* Mobile overlay */}
       {isMobile && sidebarOpen && (
@@ -184,12 +219,19 @@ export function ConvexChatInterface({
         aria-label="Chat main content"
       >
         {/* Chat Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b-2 border-border bg-background flex-shrink-0">
-          <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
-            {isMobile && !sidebarOpen && (
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 hover:bg-secondary-background rounded-base border-2 border-border touch-manipulation flex-shrink-0"
+        <div className="flex items-center justify-between p-3 md:p-4 py-5 border-b-2 border-border bg-background flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden py-1">
+            {((isMobile && !sidebarOpen) ||
+              (!isMobile && sidebarCollapsed)) && (
+              <Button
+                onClick={() => {
+                  if (isMobile) {
+                    setSidebarOpen(true);
+                  } else {
+                    setSidebarCollapsed(false);
+                  }
+                }}
+                className="flex-shrink-0"
                 aria-label="Open sidebar"
                 aria-controls="sidebar"
               >
@@ -206,7 +248,7 @@ export function ConvexChatInterface({
                     d="M4 6h16M4 12h16M4 18h16"
                   />
                 </svg>
-              </button>
+              </Button>
             )}
 
             <div className="min-w-0 flex-1 overflow-hidden">
@@ -224,21 +266,18 @@ export function ConvexChatInterface({
 
           {/* Right side actions - clean and spaced */}
           <div className="flex items-center gap-4 flex-shrink-0">
-            <button
+            <Button
               onClick={handleNewConversation}
               disabled={isCreatingConversation}
-              className="px-3 py-2 text-sm font-base bg-main text-main-foreground border-2 border-border rounded-base hover:shadow-shadow transition-all disabled:opacity-50 touch-manipulation"
               aria-label="Start new conversation"
+              className="hidden sm:flex"
             >
               {isCreatingConversation ? (
                 <span className="inline-block animate-spin">⟳</span>
               ) : (
-                <>
-                  <span className="sm:hidden">+</span>
-                  <span className="hidden sm:inline">New Chat</span>
-                </>
+                "New Chat"
               )}
-            </button>
+            </Button>
 
             {/* Theme and Profile with better spacing */}
             <div className="flex items-center gap-3">
@@ -259,13 +298,13 @@ export function ConvexChatInterface({
               <span className="text-sm flex-1">
                 {conversationsError || sendMessageError}
               </span>
-              <button
+              <Button
                 className="px-2 py-1 text-xs font-base bg-main text-main-foreground border-2 border-border rounded-base hover:shadow-shadow touch-manipulation flex-shrink-0"
                 onClick={clearAllErrors}
                 aria-label="Clear error"
               >
                 Dismiss
-              </button>
+              </Button>
             </div>
           </div>
         )}

@@ -81,4 +81,54 @@ export class ClientAIServiceAdapter implements AIService {
   estimateTokens(text: string): number {
     return Math.ceil(text.length / 4);
   }
+
+  /**
+   * Generate a conversation title based on the first message
+   */
+  async generateTitle(prompt: string, model?: string): Promise<string> {
+    if (!prompt.trim()) throw new Error("Prompt cannot be empty");
+
+    const body = {
+      prompt,
+      context: [], // No context needed for title generation
+      generateTitle: true,
+      ...(model && { model }), // Pass model if provided
+    };
+
+    const res = await fetch(this.endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      throw new Error(
+        errorData.error || `HTTP ${res.status}: ${res.statusText}`
+      );
+    }
+
+    const data = await res.json();
+    if (!data.text) {
+      throw new Error("Invalid response format");
+    }
+
+    // Clean up the title and ensure it's reasonable length
+    let title = data.text.trim();
+
+    // Remove quotes if present
+    title = title.replace(/^["']|["']$/g, "");
+
+    // Limit to reasonable length
+    if (title.length > 50) {
+      title = title.substring(0, 50).trim();
+      // Try to end at a word boundary
+      const lastSpace = title.lastIndexOf(" ");
+      if (lastSpace > 20) {
+        title = title.substring(0, lastSpace);
+      }
+    }
+
+    return title || "New Conversation"; // Fallback title
+  }
 }

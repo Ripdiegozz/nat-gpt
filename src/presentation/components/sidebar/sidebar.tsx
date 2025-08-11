@@ -4,12 +4,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ConversationList } from "./conversation-list";
 import { useUISettings } from "../../stores/chat-settings.store";
 import { cn } from "@/lib/utils";
-import { Plus, Menu, X, MessageSquare } from "lucide-react";
+import { Plus, X, MessageSquare } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface ConversationData {
-  _id: string;
+  id: string;
   title: string;
-  updatedAt: number;
+  messages: any[];
+  createdAt: string;
+  updatedAt: string;
   messageCount?: number;
 }
 
@@ -18,8 +21,12 @@ interface SidebarProps {
   onConversationSelect: (conversationId: string) => void;
   conversations?: ConversationData[];
   isLoading?: boolean;
-  onNewConversation?: () => Promise<boolean>;
+  onNewConversation?: () => Promise<string | null>;
   onDeleteConversation?: (conversationId: string) => Promise<boolean>;
+  onRenameConversation?: (
+    conversationId: string,
+    newTitle: string
+  ) => Promise<boolean>;
   isCreatingConversation?: boolean;
   className?: string;
   isMobile?: boolean;
@@ -33,38 +40,56 @@ export function Sidebar({
   isLoading = false,
   onNewConversation,
   onDeleteConversation,
+  onRenameConversation,
   isCreatingConversation = false,
   className,
   isMobile = false,
   onClose,
 }: SidebarProps) {
   const { sidebarCollapsed, setSidebarCollapsed } = useUISettings();
+  const router = useRouter();
 
   // Use local state for mobile, global state for desktop
   const isCollapsed = isMobile ? false : sidebarCollapsed;
 
+  // Conversations are already mapped in the parent components, no need to map again
+  const mappedConversations = conversations.filter((conv) => conv && conv.id);
+
   const handleNewConversation = async () => {
     if (onNewConversation) {
-      await onNewConversation();
+      const newConversationId = await onNewConversation();
       // Close sidebar on mobile after creating conversation
       if (isMobile && onClose) {
         onClose();
       }
+      // Navigation will be handled by the parent component
     }
   };
 
   const handleDeleteConversation = async (conversationId: string) => {
     if (onDeleteConversation) {
       await onDeleteConversation(conversationId);
-      // If we deleted the active conversation, clear selection
+      // If we deleted the active conversation, navigate to chat home
       if (activeConversationId === conversationId) {
-        onConversationSelect("");
+        router.push("/chat");
       }
     }
   };
 
+  const handleRenameConversation = async (
+    conversationId: string,
+    newTitle: string
+  ) => {
+    if (onRenameConversation) {
+      await onRenameConversation(conversationId, newTitle);
+    }
+  };
+
   const handleConversationSelect = (conversationId: string) => {
+    // First update the internal state
     onConversationSelect(conversationId);
+    // Then navigate to the conversation page using SSR routing
+    router.push(`/chat/${conversationId}`);
     if (isMobile && onClose) {
       onClose();
     }
@@ -83,98 +108,74 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-secondary-background transition-all duration-300 border-r-2 border-border",
-        isCollapsed && !isMobile ? "w-16" : "w-80",
+        "flex flex-col h-full bg-secondary-background transition-all duration-300 border-r-2 border-border overflow-hidden",
+        isCollapsed && !isMobile ? "w-0" : "w-80",
         className
       )}
     >
-      {/* Header */}
+      {/* Content - only show when not collapsed */}
       <div
         className={cn(
-          "flex items-center border-b-2 border-border",
-          isCollapsed && !isMobile
-            ? "justify-center p-2"
-            : "justify-between p-4"
+          "flex flex-col h-full w-80 transition-opacity duration-300",
+          isCollapsed && !isMobile ? "opacity-0 pointer-events-none" : "opacity-100"
         )}
       >
-        {isCollapsed && !isMobile ? (
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-5 border-b-2 border-border">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="h-5 w-5 text-foreground shrink-0" />
+            <h2 className="text-lg font-heading text-foreground">
+              Conversations
+            </h2>
+          </div>
           <Button
             variant="neutral"
             size="icon"
             onClick={handleToggleCollapse}
             className="shrink-0"
-            aria-label="Expand sidebar"
+            aria-label={isMobile ? "Close sidebar" : "Collapse sidebar"}
           >
-            <Menu className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </Button>
-        ) : (
-          <>
-            <div className="flex items-center gap-3">
-              <MessageSquare className="h-5 w-5 text-foreground shrink-0" />
-              <h2 className="text-lg font-heading text-foreground">
-                Conversations
-              </h2>
-            </div>
-            <Button
-              variant="neutral"
-              size="icon"
-              onClick={handleToggleCollapse}
-              className="shrink-0"
-              aria-label={isMobile ? "Close sidebar" : "Collapse sidebar"}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </>
-        )}
-      </div>
+        </div>
 
-      {/* New Conversation Button */}
-      <div className={cn(isCollapsed && !isMobile ? "p-2" : "p-4")}>
-        <Button
-          onClick={handleNewConversation}
-          disabled={isCreatingConversation}
-          className="w-full justify-center"
-          size={isCollapsed && !isMobile ? "icon" : "default"}
-          aria-label="Start new conversation"
-        >
-          <Plus className="h-4 w-4" />
-          {!isCollapsed && (
+        {/* New Conversation Button */}
+        <div className="p-4">
+          <Button
+            onClick={handleNewConversation}
+            disabled={isCreatingConversation}
+            className="w-full justify-center"
+            aria-label="Start new conversation"
+          >
+            <Plus className="h-4 w-4" />
             <span className="ml-2">
               {isCreatingConversation ? "Creating..." : "New Chat"}
             </span>
-          )}
-        </Button>
-      </div>
+          </Button>
+        </div>
 
-      {/* Conversation List */}
-      <ScrollArea className="flex-1 px-2">
-        <ConversationList
-          conversations={conversations.map((conv) => ({
-            id: conv._id,
-            title: conv.title,
-            messages: [], // ConversationList no usa messages en realidad
-            createdAt: new Date(conv.updatedAt).toISOString(),
-            updatedAt: new Date(conv.updatedAt).toISOString(),
-            messageCount: conv.messageCount || 0,
-          }))}
-          activeConversationId={activeConversationId}
-          onConversationSelect={handleConversationSelect}
-          onConversationDelete={handleDeleteConversation}
-          isLoading={isLoading}
-          isCollapsed={isCollapsed && !isMobile}
-          isMobile={isMobile}
-        />
-      </ScrollArea>
+        {/* Conversation List */}
+        <ScrollArea className="flex-1 px-2 overflow-hidden">
+          <ConversationList
+            conversations={mappedConversations}
+            activeConversationId={activeConversationId}
+            onConversationSelect={handleConversationSelect}
+            onConversationDelete={handleDeleteConversation}
+            onConversationRename={handleRenameConversation}
+            isLoading={isLoading}
+            isCollapsed={false}
+            isMobile={isMobile}
+          />
+        </ScrollArea>
 
-      {/* Footer */}
-      {!isCollapsed && (
+        {/* Footer */}
         <div className="p-4 border-t-2 border-border">
           <div className="text-xs text-foreground/60 font-base">
             {conversations.length} conversation
             {conversations.length !== 1 ? "s" : ""}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
