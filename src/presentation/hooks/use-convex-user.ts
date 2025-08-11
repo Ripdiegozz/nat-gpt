@@ -16,13 +16,16 @@ export function useConvexUser() {
 
   // Auto-create or update user when Clerk user is loaded
   useEffect(() => {
-    if (isUserLoaded && user && !convexUser) {
+    if (isUserLoaded && user && convexUser === null) {
+      // Only create user if query completed and returned null (user doesn't exist)
       createOrUpdateUser({
         clerkId: user.id,
         email: user.emailAddresses[0]?.emailAddress || "",
         name: user.fullName || user.firstName || "",
         imageUrl: user.imageUrl,
-      }).catch(console.error);
+      }).catch((error) => {
+        console.error("Failed to create user:", error);
+      });
     }
   }, [isUserLoaded, user, convexUser, createOrUpdateUser]);
 

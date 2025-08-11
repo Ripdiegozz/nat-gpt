@@ -18,13 +18,32 @@ export const createConversation = mutation({
   },
   handler: async (ctx, args) => {
     // First, get the user by Clerk ID
-    const user = await ctx.db
+    let user = await ctx.db
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", args.clerkUserId))
       .first();
 
     if (!user) {
-      throw new Error("User not found. Please sign in again.");
+      // Auto-create user if they don't exist (fallback for edge cases)
+      const now = Date.now();
+      const userId = await ctx.db.insert("users", {
+        clerkId: args.clerkUserId,
+        email: "", // Will be updated by user sync
+        name: "",
+        imageUrl: "",
+        preferences: {
+          theme: "system",
+          aiModel: "compound-beta",
+          language: "en",
+          maxTokens: 8192,
+        },
+        createdAt: now,
+        updatedAt: now,
+      });
+      user = await ctx.db.get(userId);
+      if (!user) {
+        throw new Error("Failed to create user");
+      }
     }
 
     const now = Date.now();
@@ -35,7 +54,7 @@ export const createConversation = mutation({
       isArchived: false,
       isShared: false,
       metadata: args.metadata || {
-        model: "gpt-4o-mini",
+        model: "compound-beta",
         temperature: 0.7,
         maxTokens: 8192,
         tags: [],
@@ -322,7 +341,8 @@ export const getSharedConversations = query({
       .first();
 
     if (!user) {
-      throw new Error("User not found");
+      // Return empty array instead of throwing error for new users
+      return [];
     }
 
     const shares = await ctx.db

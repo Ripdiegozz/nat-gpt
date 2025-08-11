@@ -34,7 +34,7 @@ export default function SignUpPage() {
             },
           }}
           signInUrl="/sign-in"
-          redirectUrl="/chat"
+          fallbackRedirectUrl="/chat"
         />
       </div>
     </div>
