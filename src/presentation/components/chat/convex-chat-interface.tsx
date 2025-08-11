@@ -167,12 +167,30 @@ export function ConvexChatInterface({
     >
       {/* Sidebar */}
       {isMobile ? (
-        sidebarOpen && (
+        <>
+          {/* Mobile overlay backdrop */}
           <div
-            className="fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] shadow-lg flex-shrink-0"
+            className={cn(
+              "fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ease-in-out",
+              sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+            )}
+            onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Mobile sidebar */}
+          <div
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] shadow-lg flex-shrink-0 will-change-transform",
+              "transform transition-transform duration-300 ease-in-out",
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            )}
             id="sidebar"
             role="complementary"
             aria-label="Conversations sidebar"
+            style={{
+              // Ensure it's completely off-screen when closed
+              transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
+            }}
           >
             <Sidebar
               activeConversationId={activeConversationId}
@@ -188,7 +206,7 @@ export function ConvexChatInterface({
               onClose={() => setSidebarOpen(false)}
             />
           </div>
-        )
+        </>
       ) : (
         <div
           className="flex-shrink-0"
@@ -210,15 +228,6 @@ export function ConvexChatInterface({
             onClose={() => setSidebarOpen(false)}
           />
         </div>
-      )}
-
-      {/* Mobile overlay */}
-      {isMobile && sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-overlay z-40"
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Close sidebar"
-        />
       )}
 
       {/* Main Chat Area */}

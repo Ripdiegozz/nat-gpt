@@ -109,7 +109,9 @@ export function Sidebar({
   return (
     <div
       className={cn(
-        "flex flex-col h-full bg-secondary-background transition-all duration-300 border-r-2 border-border overflow-hidden",
+        "flex flex-col h-full bg-secondary-background border-r-2 border-border overflow-hidden",
+        // Desktop transition for width
+        !isMobile && "transition-all duration-300 ease-in-out",
         isCollapsed && !isMobile ? "w-0" : "w-80",
         className
       )}
@@ -117,7 +119,9 @@ export function Sidebar({
       {/* Content - only show when not collapsed */}
       <div
         className={cn(
-          "flex flex-col h-full w-80 transition-opacity duration-300",
+          "flex flex-col h-full w-80",
+          // Desktop transition for opacity
+          !isMobile && "transition-opacity duration-300 ease-in-out",
           isCollapsed && !isMobile
             ? "opacity-0 pointer-events-none"
             : "opacity-100"
