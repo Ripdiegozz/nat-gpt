@@ -93,9 +93,7 @@ export function AudioRecorder({
       >
         <div className="text-center text-foreground/60">
           <Mic className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <div className="text-sm">
-            {t("audio.audioNotSupported")}
-          </div>
+          <div className="text-sm">{t("audio.audioNotSupported")}</div>
         </div>
       </div>
     );
@@ -188,22 +186,6 @@ export function AudioRecorder({
             </div>
           </div>
 
-          {/* Audio level visualization during warm-up */}
-          <div className="space-y-2">
-            <div className="text-center text-xs text-foreground/60">
-              {t("audio.volume")}
-            </div>
-            <div className="px-2">
-              <Slider
-                value={[audioLevel * 100]}
-                max={100}
-                step={0.1}
-                className="w-full [&>span[role=slider]]:h-3 [&>span[role=slider]]:w-3 [&>span[role=slider]]:transition-all [&>span[role=slider]]:duration-150 [&>span[role=slider]]:ease-out"
-                disabled
-              />
-            </div>
-          </div>
-
           {/* Cancel button during warm-up */}
           <div className="flex items-center justify-center">
             <Button
@@ -270,22 +252,6 @@ export function AudioRecorder({
             </div>
           </div>
 
-          {/* Audio level visualization */}
-          <div className="space-y-2">
-            <div className="text-center text-xs text-foreground/60">
-              {t("audio.volume")}
-            </div>
-            <div className="px-2">
-              <Slider
-                value={[audioLevel * 100]}
-                max={100}
-                step={0.1}
-                className="w-full [&>span[role=slider]]:h-3 [&>span[role=slider]]:w-3 [&>span[role=slider]]:transition-all [&>span[role=slider]]:duration-150 [&>span[role=slider]]:ease-out"
-                disabled
-              />
-            </div>
-          </div>
-
           {/* Controls */}
           <div className="flex items-center justify-center gap-3">
             <Button
@@ -340,7 +306,7 @@ export function AudioRecorder({
       <div className="space-y-4">
         {/* Language selector */}
         <LanguageSelector type="transcription" />
-        
+
         {/* Record button */}
         <div className="text-center space-y-3">
           <Button onClick={handleStartRecording} size="lg" className="w-full">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Mic,
@@ -13,7 +13,6 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { AudioWaveform } from "./audio-waveform";
 import { useLanguageSettings } from "../../stores/language-settings.store";
 
 interface AudioRecorderProps {
@@ -113,6 +112,14 @@ export function AudioRecorder({
         durationIntervalRef.current = null;
       }
 
+      // Stop all tracks from the audio stream
+      if (audioStream) {
+        audioStream.getTracks().forEach((track) => {
+          track.stop();
+        });
+        setAudioStream(null);
+      }
+
       // Create audio blob and URL
       setTimeout(() => {
         const audioBlob = new Blob(audioChunksRef.current, {
@@ -122,7 +129,7 @@ export function AudioRecorder({
         setAudioUrl(url);
       }, 100);
     }
-  }, [isRecording]);
+  }, [isRecording, audioStream]);
 
   const playRecording = useCallback(() => {
     if (audioUrl && audioRef.current) {
@@ -188,6 +195,25 @@ export function AudioRecorder({
   }, [audioUrl, onTranscription]);
 
   const clearRecording = useCallback(() => {
+    // Stop recording if currently recording
+    if (isRecording && mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+        durationIntervalRef.current = null;
+      }
+    }
+
+    // Stop all tracks from the audio stream
+    if (audioStream) {
+      audioStream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      setAudioStream(null);
+    }
+
     if (audioUrl) {
       URL.revokeObjectURL(audioUrl);
       setAudioUrl(null);
@@ -198,23 +224,83 @@ export function AudioRecorder({
     setCurrentTime(0);
     setError(null);
     audioChunksRef.current = [];
-  }, [audioUrl]);
+  }, [audioUrl, isRecording, audioStream]);
+
+  // Cleanup effect to stop stream when component unmounts
+  useEffect(() => {
+    return () => {
+      // Stop any ongoing recording
+      if (isRecording && mediaRecorderRef.current) {
+        mediaRecorderRef.current.stop();
+      }
+
+      // Stop all tracks from the audio stream
+      if (audioStream) {
+        audioStream.getTracks().forEach((track) => {
+          track.stop();
+        });
+      }
+
+      // Clear any intervals
+      if (durationIntervalRef.current) {
+        clearInterval(durationIntervalRef.current);
+      }
+
+      // Revoke object URLs
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [isRecording, audioStream, audioUrl]);
 
   return (
     <div className={cn("flex flex-col gap-4 w-full max-w-full", className)}>
-      {/* Audio Waveform Display with integrated controls */}
+      {/* Audio Recording Indicator */}
       <div className="flex items-center gap-3 w-full min-h-[60px]">
-        {/* Waveform takes the remaining space */}
-        <AudioWaveform
-          isRecording={isRecording}
-          isPlaying={isActuallyPlaying}
-          duration={recordingDuration}
-          currentTime={currentTime}
-          hasAudio={!!audioUrl}
-          audioStream={audioStream}
-          audioElement={audioRef.current}
-          className="flex-1"
-        />
+        {/* Simple Recording Indicator */}
+        <div className="flex-1 flex items-center justify-center gap-3 p-4 bg-secondary-background border-2 border-border rounded-base">
+          {isRecording ? (
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1">
+                <div className="w-2 h-6 bg-red-500 rounded-sm animate-pulse"></div>
+                <div
+                  className="w-2 h-4 bg-red-400 rounded-sm animate-pulse"
+                  style={{ animationDelay: "0.1s" }}
+                ></div>
+                <div
+                  className="w-2 h-8 bg-red-500 rounded-sm animate-pulse"
+                  style={{ animationDelay: "0.2s" }}
+                ></div>
+                <div
+                  className="w-2 h-3 bg-red-400 rounded-sm animate-pulse"
+                  style={{ animationDelay: "0.3s" }}
+                ></div>
+                <div
+                  className="w-2 h-7 bg-red-500 rounded-sm animate-pulse"
+                  style={{ animationDelay: "0.4s" }}
+                ></div>
+              </div>
+              <span className="text-sm text-foreground/70">
+                {Math.floor(recordingDuration / 60)}:
+                {(recordingDuration % 60).toString().padStart(2, "0")}
+              </span>
+            </div>
+          ) : audioUrl ? (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-sm text-foreground/70">
+                Recording ready
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+              <span className="text-sm text-foreground/50">
+                Ready to record
+              </span>
+            </div>
+          )}
+        </div>
 
         {/* Recording/Stop Button */}
         {!audioUrl && (
