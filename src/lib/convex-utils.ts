@@ -20,7 +20,6 @@ export function isValidConvexId(id: string): boolean {
  */
 export function safeConvexId<TableName extends TableNames>(
   id: string,
-  tableName: TableName
 ): Id<TableName> | null {
   if (isValidConvexId(id)) {
     return id as Id<TableName>;
@@ -34,9 +33,11 @@ export function safeConvexId<TableName extends TableNames>(
 export function isConvexValidationError(error: unknown): boolean {
   if (error && typeof error === "object" && "message" in error) {
     const message = error.message as string;
-    return message.includes("ArgumentValidationError") || 
-           message.includes("Value does not match validator") ||
-           message.includes("v.id(");
+    return (
+      message.includes("ArgumentValidationError") ||
+      message.includes("Value does not match validator") ||
+      message.includes("v.id(")
+    );
   }
   return false;
 }

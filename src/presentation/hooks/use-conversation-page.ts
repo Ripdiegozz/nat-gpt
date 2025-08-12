@@ -23,8 +23,8 @@ export function useConversationPage(conversationId: string) {
       chatData.setActiveConversation
     ) {
       // Validate that conversationId is a valid Convex ID format
-      const validConvexId = safeConvexId(conversationId, "conversations");
-      
+      const validConvexId = safeConvexId(conversationId);
+
       if (validConvexId) {
         chatData.setActiveConversation(validConvexId);
       } else {
@@ -42,7 +42,10 @@ export function useConversationPage(conversationId: string) {
         chatData.error.includes("Conversation not found") ||
         isConvexValidationError(chatData.error)
       ) {
-        console.log("Conversation error detected, redirecting to /chat:", chatData.error);
+        console.log(
+          "Conversation error detected, redirecting to /chat:",
+          chatData.error
+        );
         router.push("/chat");
       }
     }
@@ -83,6 +86,7 @@ export function useConversationPage(conversationId: string) {
     isCreatingConversation: chatData.isCreatingConversation,
     setActiveConversation: chatData.setActiveConversation,
     sendMessage: chatData.sendMessage,
+    sendAudioMessage: chatData.sendAudioMessage,
     createNewConversation: chatData.createNewConversation,
     deleteConversation: chatData.deleteConversation,
     updateConversationTitle: chatData.updateConversationTitle,

@@ -172,31 +172,16 @@ export function useConversation(conversationId?: Id<"conversations">) {
     null
   );
 
-  // Use a try-catch wrapper for the query to handle validation errors
-  let conversation;
-  let queryError = null;
-  
-  try {
-    conversation = useQuery(
-      api.conversations.getConversationWithMessages,
-      conversationId && user?.id
-        ? { conversationId, clerkUserId: user.id }
-        : "skip"
-    );
-  } catch (error) {
-    queryError = error;
-    conversation = null;
-  }
+  // Query conversation data
+  const conversation = useQuery(
+    api.conversations.getConversationWithMessages,
+    conversationId && user?.id
+      ? { conversationId, clerkUserId: user.id }
+      : "skip"
+  );
 
   // Handle conversation errors and redirect if deleted or invalid
   useEffect(() => {
-    if (queryError && isConvexValidationError(queryError)) {
-      console.log("Invalid conversation ID detected, redirecting to /chat");
-      setConversationError("Invalid conversation ID");
-      router.push("/chat");
-      return;
-    }
-
     if (conversation === null && conversationId) {
       // Conversation was not found (likely deleted), redirect to chat
       console.log("Conversation not found, redirecting to /chat");
@@ -206,7 +191,7 @@ export function useConversation(conversationId?: Id<"conversations">) {
       // Conversation loaded successfully, clear any errors
       setConversationError(null);
     }
-  }, [conversation, conversationId, router, queryError]);
+  }, [conversation, conversationId, router]);
 
   return {
     conversation,

@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
       prompt,
       context = [],
       model,
-      isFirstMessage = false,
+      isFirstMessage = false
     } = (await req.json()) as PostBody;
 
     if (!prompt || !prompt.trim()) {
@@ -98,8 +98,13 @@ export async function POST(req: NextRequest) {
     const client = getClient();
     const selectedModel = model || MODEL_DEFAULT;
 
-    // Always use the regular system prompt (which now includes title generation instructions)
-    const systemPrompt = await getSystemPrompt();
+    // Use the system prompt and modify for first message if needed
+    let systemPrompt = await getSystemPrompt();
+    
+    // For first messages, add title generation instruction
+    if (isFirstMessage) {
+      systemPrompt += `\n\nIMPORTANT: Since this is the first message in a new conversation, please start your response with a conversation title on the first line in the format "Title: [Your Title Here]" followed by a blank line, then your main response. The title should be concise (2-6 words) and capture the main topic or question.`;
+    }
 
     // Build messages array with system prompt first
     const messages: Array<{
@@ -123,11 +128,6 @@ export async function POST(req: NextRequest) {
 
     while (retries < maxRetries) {
       try {
-        console.log({
-          selectedModel,
-          messages,
-          isFirstMessage,
-        });
         completion = await client.chat.completions.create({
           model: selectedModel,
           messages,
@@ -176,18 +176,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Extract title if present (for first messages)
+    // Extract title if present (for first messages or when user explicitly requests it)
     let responseText = text;
     let title: string | undefined;
 
-    if (isFirstMessage && text.startsWith("Subject: ")) {
+    // Check if AI provided a title line (for first messages)
+    if (text.startsWith("Title: ") || text.startsWith("Subject: ")) {
       const lines = text.split("\n");
-      const subjectLine = lines[0];
+      const titleLine = lines[0];
 
-      // Extract title from "Subject: Title Here" format
-      title = subjectLine.replace("Subject: ", "").trim();
+      // Extract title from "Title: Title Here" or "Subject: Title Here" format
+      title = titleLine.replace(/^(Title|Subject): /, "").trim();
 
-      // Remove the subject line from the response
+      // Remove the title line from the response
       responseText = lines.slice(1).join("\n").trim();
 
       // Remove any leading empty lines

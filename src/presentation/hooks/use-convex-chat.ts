@@ -10,6 +10,7 @@ import { ConvexMessageAdapter } from "../../infrastructure/adapters/convex-messa
 import { useSelectedModel } from "../stores/chat-settings.store";
 import { useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
+import { useLanguageSettings } from "../stores/language-settings.store";
 
 export function useConvexChat() {
   const [activeConversationId, setActiveConversationId] =
@@ -17,6 +18,7 @@ export function useConvexChat() {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const { convexUser } = useConvexUser();
   const { selectedModel } = useSelectedModel();
+  const { transcriptionLanguage, getTranscriptionCode } = useLanguageSettings();
 
   // Conversations management
   const {
@@ -64,6 +66,161 @@ export function useConvexChat() {
     clearMessagesError();
   }, [clearConversationsError, clearMessagesError]);
 
+  // Send audio message with transcription and AI response
+  const sendAudioMessage = useCallback(
+    async (
+      audioBlob: Blob
+    ): Promise<{
+      success: boolean;
+      conversationId?: string;
+      isNewConversation?: boolean;
+    }> => {
+      try {
+        // Check if user is signed in
+        if (!convexUser?.clerkId) {
+          throw new Error("User not signed in");
+        }
+
+        // First, transcribe the audio
+        console.log("🎤 [CLIENT] Preparing audio for transcription:", {
+          blobSize: audioBlob.size,
+          blobType: audioBlob.type,
+          sizeInMB: (audioBlob.size / 1024 / 1024).toFixed(2)
+        });
+
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
+        
+        // Add selected language for transcription
+        const languageCode = getTranscriptionCode(transcriptionLanguage);
+        formData.append("language", languageCode);
+        console.log("🎤 [CLIENT] Using transcription language:", languageCode);
+
+        console.log("🎤 [CLIENT] Sending transcription request...");
+        const transcribeResponse = await fetch("/api/transcribe", {
+          method: "POST",
+          body: formData,
+        });
+
+        console.log("🎤 [CLIENT] Transcription response:", {
+          status: transcribeResponse.status,
+          statusText: transcribeResponse.statusText,
+          ok: transcribeResponse.ok
+        });
+
+        if (!transcribeResponse.ok) {
+          const errorData = await transcribeResponse.json().catch(() => ({}));
+          console.error("🎤 [CLIENT] Transcription error response:", errorData);
+          throw new Error(errorData.error || "Transcription failed");
+        }
+
+        const transcriptionResult = await transcribeResponse.json();
+        console.log("🎤 [CLIENT] Transcription result:", {
+          hasText: !!transcriptionResult.text,
+          textLength: transcriptionResult.text?.length || 0,
+          language: transcriptionResult.language,
+          duration: transcriptionResult.duration
+        });
+
+        const { text: transcribedText } = transcriptionResult;
+
+        if (!transcribedText?.trim()) {
+          throw new Error("No text was transcribed from the audio");
+        }
+
+        // Note: Audio URL creation removed for now as we're not persisting audio
+
+        let conversationId = activeConversationId;
+        let isNewConversation = false;
+
+        // If no active conversation, create a new one
+        if (!conversationId) {
+          const title = transcribedText.length > 50 
+            ? transcribedText.substring(0, 50) + "..." 
+            : transcribedText;
+          conversationId = await createNewConversation(title);
+          setActiveConversationId(conversationId);
+          isNewConversation = true;
+        } else {
+          // Check if the active conversation is empty (should generate title)
+          const currentMessages = ConvexMessageAdapter.toDomainMessages(convexMessages);
+          if (currentMessages.length === 0) {
+            isNewConversation = true;
+          }
+        }
+
+        // Add user message with transcribed text
+        // Note: Audio data is handled client-side only for now
+        await addMessage({
+          conversationId,
+          clerkUserId: convexUser.clerkId,
+          role: "user",
+          content: `🎤 ${transcribedText}`, // Add audio indicator
+        });
+
+        // NOW set loading state after user message is added
+        setIsSendingMessage(true);
+
+        // Get AI response using context
+        const contextMessages = isNewConversation
+          ? []
+          : ConvexMessageAdapter.toAIServiceContext(convexMessages);
+
+        const aiResponse = await aiService.generateResponse(
+          transcribedText,
+          contextMessages,
+          { model: selectedModel, isFirstMessage: isNewConversation }
+        );
+
+        // Add AI response
+        await addMessage({
+          conversationId,
+          clerkUserId: convexUser.clerkId,
+          role: "assistant",
+          content: aiResponse,
+          metadata: {
+            model: selectedModel,
+            tokens: aiService.estimateTokens(aiResponse),
+          },
+        });
+
+        // Generate and update title for new conversations
+        if (isNewConversation) {
+          try {
+            const generatedTitle = await aiService.generateTitle(
+              transcribedText,
+              selectedModel
+            );
+            await updateConversationTitle(conversationId, generatedTitle);
+          } catch (titleError) {
+            console.warn("Failed to generate conversation title:", titleError);
+          }
+        }
+
+        return {
+          success: true,
+          conversationId: conversationId,
+          isNewConversation,
+        };
+      } catch (err) {
+        console.error("Failed to send audio message:", err);
+        return { success: false };
+      } finally {
+        setIsSendingMessage(false);
+      }
+    },
+    [
+      activeConversationId,
+      convexUser?.clerkId,
+      addMessage,
+      aiService,
+      convexMessages,
+      createNewConversation,
+      selectedModel,
+      updateConversationTitle,
+    ]
+  );
+
   // Send message with AI response
   const sendMessage = useCallback(
     async (
@@ -73,7 +230,6 @@ export function useConvexChat() {
       conversationId?: string;
       isNewConversation?: boolean;
     }> => {
-      setIsSendingMessage(true);
       try {
         // Check if user is signed in
         if (!convexUser?.clerkId) {
@@ -110,6 +266,9 @@ export function useConvexChat() {
           role: "user",
           content,
         });
+
+        // NOW set loading state after user message is added
+        setIsSendingMessage(true);
 
         // Get AI response using context (empty for new conversations)
         const contextMessages = isNewConversation
@@ -243,6 +402,7 @@ export function useConvexChat() {
 
     // Actions
     sendMessage,
+    sendAudioMessage,
     createNewConversation: createAndSetConversation,
     deleteConversation: deleteConversationWrapper,
     updateConversationTitle: updateConversationTitleWrapper,

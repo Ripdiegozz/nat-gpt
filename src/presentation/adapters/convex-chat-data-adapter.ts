@@ -34,6 +34,11 @@ export interface ConvexChatData {
     isNewConversation?: boolean;
     conversationId?: string;
   }>;
+  sendAudioMessage: (audioBlob: Blob, audioDuration: number) => Promise<{
+    success: boolean;
+    isNewConversation?: boolean;
+    conversationId?: string;
+  }>;
   createNewConversation: (title?: string) => Promise<string | null>;
   deleteConversation: (id: string) => Promise<boolean>;
   updateConversationTitle: (id: string, title: string) => Promise<void>;
@@ -80,6 +85,7 @@ export interface AdaptedChatData {
   isCreatingConversation: boolean;
   setActiveConversation: (id: string) => void;
   sendMessage: (content: string) => Promise<boolean>;
+  sendAudioMessage: (audioBlob: Blob, audioDuration: number) => Promise<boolean>;
   createNewConversation: () => Promise<string | null>;
   deleteConversation: (id: string) => Promise<boolean>;
   renameConversation: (id: string, newTitle: string) => Promise<boolean>;
@@ -146,6 +152,7 @@ export class ConvexChatDataAdapter {
       isCreatingConversation: this.chatData.isCreatingConversation,
       setActiveConversation: this.createSetActiveConversationHandler(),
       sendMessage: this.createSendMessageHandler(),
+      sendAudioMessage: this.createSendAudioMessageHandler(),
       createNewConversation: this.createNewConversationHandler(),
       deleteConversation: this.createDeleteConversationHandler(),
       renameConversation: this.createRenameConversationHandler(),
@@ -164,6 +171,25 @@ export class ConvexChatDataAdapter {
     return async (content: string): Promise<boolean> => {
       try {
         const result = await this.chatData.sendMessage(content);
+        if (
+          result.success &&
+          result.isNewConversation &&
+          result.conversationId
+        ) {
+          this.router.push(`/chat/${result.conversationId}`);
+        }
+        return result.success;
+      } catch (err) {
+        console.error("Failed to send message:", err);
+        return false;
+      }
+    };
+  }
+
+  protected createSendAudioMessageHandler() {
+    return async (audioBlob: Blob, audioDuration: number): Promise<boolean> => {
+      try {
+        const result = await this.chatData.sendAudioMessage(audioBlob, audioDuration);
         if (
           result.success &&
           result.isNewConversation &&

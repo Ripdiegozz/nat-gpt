@@ -7,6 +7,7 @@ import { MessageDTO } from "../../../application/dtos/message.dto";
 import { cn } from "@/lib/utils";
 import { Avatar } from "@radix-ui/react-avatar";
 import { Bot } from "lucide-react";
+import { useI18n } from "@/src/lib/i18n";
 
 interface MessageListProps {
   messages: MessageDTO[];
@@ -21,6 +22,7 @@ export function MessageList({
 }: MessageListProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { t } = useI18n();
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -39,10 +41,12 @@ export function MessageList({
           <div className="flex items-center justify-center h-full min-h-[200px]">
             <div className="text-center text-foreground/60">
               <div className="text-lg font-heading mb-2">
-                Start a conversation
+                {/* Start a conversation */}
+                {t("chat.startConversation")}
               </div>
               <div className="text-sm font-base">
-                Send a message to begin chatting
+                {/* Send a message to begin chatting */}
+                {t("chat.sendAMessageToBegin")}
               </div>
             </div>
           </div>
@@ -62,11 +66,22 @@ export function MessageList({
             <div className="bg-secondary-background border-2 border-border rounded-base p-4 max-w-xs">
               <div className="flex flex-col justify-center items-center gap-1">
                 <div className="flex gap-1">
-                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                  <div className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                  <div
+                    className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  ></div>
+                  <div
+                    className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  ></div>
                 </div>
-                <span className="text-xs font-base text-foreground/60 ml-2">AI is typing...</span>
+                <span className="text-xs font-base text-foreground/60 ml-2">
+                  AI is typing...
+                </span>
               </div>
             </div>
           </div>

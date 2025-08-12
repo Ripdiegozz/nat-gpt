@@ -20,6 +20,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { useI18n } from "@/src/lib/i18n";
 
 interface ConversationItemProps {
   conversation: ConversationDTO;
@@ -43,6 +44,7 @@ export function ConversationItem({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRenameDialog, setShowRenameDialog] = useState(false);
   const [newTitle, setNewTitle] = useState(conversation.title);
+  const { t } = useI18n();
 
   const handleDelete = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -129,15 +131,15 @@ export function ConversationItem({
         </div>
       </div>
 
-      {/* Actions - Always visible, positioned at the right */}
-      <div className="absolute top-1/2 right-3 -translate-y-1/2 opacity-60 group-hover:opacity-100 transition-opacity duration-200 z-20">
+      {/* Actions - Always visible for mobile accessibility */}
+      <div className="absolute top-1/2 right-3 -translate-y-1/2 opacity-100 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="neutral"
               size="icon"
-              className="h-6 w-6 bg-background hover:bg-background/80 border border-border/50 shadow-sm hover:shadow-md"
-              aria-label="More options"
+              className="h-6 w-6 bg-background/90 hover:bg-background border border-border/40 shadow-sm hover:shadow-md hover:border-border/60"
+              aria-label={t("navigation.moreOptions")}
               onClick={(e) => e.stopPropagation()}
             >
               <MoreHorizontal className="h-3 w-3" />

@@ -57,6 +57,7 @@ export function useChatPage() {
     isCreatingConversation: chatData.isCreatingConversation,
     setActiveConversation: chatData.setActiveConversation,
     sendMessage: chatData.sendMessage,
+    sendAudioMessage: chatData.sendAudioMessage,
     createNewConversation: chatData.createNewConversation,
     deleteConversation: chatData.deleteConversation,
     updateConversationTitle: chatData.updateConversationTitle,

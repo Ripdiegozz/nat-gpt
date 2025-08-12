@@ -3,4 +3,10 @@ export interface MessageDTO {
   content: string
   role: 'user' | 'assistant'
   timestamp: string
+  audioUrl?: string
+  audioMetadata?: {
+    duration: number
+    transcribed: boolean
+    originalAudio?: boolean
+  }
 }

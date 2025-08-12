@@ -8,12 +8,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserIcon, LogOutIcon, ChevronDownIcon } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/src/lib/i18n";
 
 interface UserProfileButtonProps {
   className?: string;
 }
 
 export function UserProfileButton({ className }: UserProfileButtonProps) {
+  const { t } = useI18n();
   const { clerkUser, isLoaded } = useConvexUser();
   const { signOut } = useClerk();
   const router = useRouter();
@@ -53,14 +55,14 @@ export function UserProfileButton({ className }: UserProfileButtonProps) {
         size="icon"
         onClick={() => setIsMenuOpen(!isMenuOpen)}
         className="h-8 w-8 sm:h-10 sm:w-10 rounded-full p-0 touch-manipulation"
-        aria-label="User menu"
+        aria-label={t("common.userMenu")}
         aria-expanded={isMenuOpen}
         aria-haspopup="true"
       >
         <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
           <AvatarImage
             src={clerkUser.imageUrl}
-            alt={clerkUser.fullName || "User avatar"}
+            alt={clerkUser.fullName || t("common.user")}
           />
           <AvatarFallback className="text-xs sm:text-sm font-base bg-main text-main-foreground">
             {userInitials.toUpperCase()}
@@ -86,7 +88,7 @@ export function UserProfileButton({ className }: UserProfileButtonProps) {
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={clerkUser.imageUrl}
-                    alt={clerkUser.fullName || "User avatar"}
+                    alt={clerkUser.fullName || t("common.user")}
                   />
                   <AvatarFallback className="text-xs font-base bg-main text-main-foreground">
                     {userInitials.toUpperCase()}
@@ -94,7 +96,7 @@ export function UserProfileButton({ className }: UserProfileButtonProps) {
                 </Avatar>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-base text-foreground truncate">
-                    {clerkUser.fullName || "User"}
+                    {clerkUser.fullName || t("common.user")}
                   </div>
                   <div className="text-xs text-foreground/60 truncate">
                     {clerkUser.emailAddresses[0]?.emailAddress}
@@ -107,19 +109,19 @@ export function UserProfileButton({ className }: UserProfileButtonProps) {
               <button
                 onClick={handleProfileClick}
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm font-base text-foreground hover:bg-background rounded-base transition-colors touch-manipulation"
-                aria-label="View profile"
+                aria-label={t("common.viewProfile")}
               >
                 <UserIcon className="h-4 w-4" />
-                Profile
+                {t("common.profile")}
               </button>
 
               <button
                 onClick={handleSignOut}
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm font-base text-foreground hover:bg-background rounded-base transition-colors touch-manipulation"
-                aria-label="Sign out"
+                aria-label={t("common.signOut")}
               >
                 <LogOutIcon className="h-4 w-4" />
-                Sign Out
+                {t("common.signOut")}
               </button>
             </div>
           </div>

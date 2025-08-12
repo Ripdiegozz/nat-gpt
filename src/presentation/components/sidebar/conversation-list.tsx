@@ -2,6 +2,7 @@ import React from "react";
 import { ConversationItem } from "./conversation-item";
 import { ConversationDTO } from "../../../application/dtos/conversation.dto";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/src/lib/i18n";
 
 interface ConversationListProps {
   conversations: ConversationDTO[];
@@ -25,6 +26,8 @@ export function ConversationList({
   isCollapsed = false,
   className,
 }: ConversationListProps) {
+  const { t } = useI18n();
+
   if (isLoading) {
     return (
       <div className={cn("space-y-2 p-2", className)}>
@@ -43,8 +46,10 @@ export function ConversationList({
       <div className={cn("flex items-center justify-center h-32", className)}>
         {!isCollapsed && (
           <div className="text-center text-foreground/60">
-            <div className="text-sm font-base">No conversations yet</div>
-            <div className="text-xs">Start a new chat to begin</div>
+            <div className="text-sm font-base">
+              {t("sidebar.noConversations")}
+            </div>
+            <div className="text-xs">{t("sidebar.startNewChat")}</div>
           </div>
         )}
       </div>
@@ -62,7 +67,11 @@ export function ConversationList({
             isActive={conversation.id === activeConversationId}
             onSelect={() => onConversationSelect(conversation.id)}
             onDelete={() => onConversationDelete(conversation.id)}
-            onRename={onConversationRename ? (newTitle) => onConversationRename(conversation.id, newTitle) : undefined}
+            onRename={
+              onConversationRename
+                ? (newTitle) => onConversationRename(conversation.id, newTitle)
+                : undefined
+            }
             isCollapsed={isCollapsed}
           />
         ))}

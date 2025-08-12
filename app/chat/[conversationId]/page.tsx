@@ -15,12 +15,12 @@ interface ConversationPageProps {
 
 export default function ConversationPage({ params }: ConversationPageProps) {
   const { conversationId } = use(params);
-  
+
   // Validate conversation ID format before doing anything else
   if (!isValidConvexId(conversationId)) {
     redirect("/chat");
   }
-  
+
   const { isLoaded, adaptedChatData } = useConversationPage(conversationId);
 
   if (!isLoaded) {

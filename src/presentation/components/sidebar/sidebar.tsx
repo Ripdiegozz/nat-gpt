@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Plus, X, MessageSquare } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { MessageDTO } from "@/src/application/dtos/message.dto";
+import { useI18n } from "@/src/lib/i18n";
 
 interface ConversationData {
   id: string;
@@ -47,6 +48,7 @@ export function Sidebar({
   isMobile = false,
   onClose,
 }: SidebarProps) {
+  const { t } = useI18n();
   const { sidebarCollapsed, setSidebarCollapsed } = useUISettings();
   const router = useRouter();
 
@@ -58,7 +60,7 @@ export function Sidebar({
 
   const handleNewConversation = async () => {
     if (onNewConversation) {
-      const newConversationId = await onNewConversation();
+      await onNewConversation();
       // Close sidebar on mobile after creating conversation
       if (isMobile && onClose) {
         onClose();
@@ -132,7 +134,7 @@ export function Sidebar({
           <div className="flex items-center gap-3">
             <MessageSquare className="h-5 w-5 text-foreground shrink-0" />
             <h2 className="text-lg font-heading text-foreground">
-              Conversations
+              {t("sidebar.conversations")}
             </h2>
           </div>
           <Button
@@ -140,7 +142,11 @@ export function Sidebar({
             size="icon"
             onClick={handleToggleCollapse}
             className="shrink-0"
-            aria-label={isMobile ? "Close sidebar" : "Collapse sidebar"}
+            aria-label={
+              isMobile
+                ? t("sidebar.closeSidebar")
+                : t("sidebar.collapseSidebar")
+            }
           >
             <X className="h-4 w-4" />
           </Button>
@@ -152,11 +158,11 @@ export function Sidebar({
             onClick={handleNewConversation}
             disabled={isCreatingConversation}
             className="w-full justify-center"
-            aria-label="Start new conversation"
+            aria-label={t("chat.newChat")}
           >
             <Plus className="h-4 w-4" />
             <span className="ml-2">
-              {isCreatingConversation ? "Creating..." : "New Chat"}
+              {isCreatingConversation ? t("common.loading") : t("chat.newChat")}
             </span>
           </Button>
         </div>
@@ -178,8 +184,15 @@ export function Sidebar({
         {/* Footer */}
         <div className="p-4 border-t-2 border-border">
           <div className="text-xs text-foreground/60 font-base">
-            {conversations.length} conversation
-            {conversations.length !== 1 ? "s" : ""}
+            {conversations.length === 1
+              ? t("sidebar.conversationCount").replace(
+                  "{{count}}",
+                  conversations.length.toString()
+                )
+              : t("sidebar.conversationCountPlural").replace(
+                  "{{count}}",
+                  conversations.length.toString()
+                )}
           </div>
         </div>
       </div>

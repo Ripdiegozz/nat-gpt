@@ -3,11 +3,13 @@ import React, { useState, useEffect, useCallback } from "react";
 import { MessageList } from "./message-list";
 import { MessageInput } from "./message-input";
 import { Sidebar } from "../sidebar";
-import { UserProfileButton, ThemeSelector } from "../common";
+import { UserProfileButton } from "../common";
+import { SettingsDropdown } from "../common/settings-dropdown";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useUISettings } from "../../stores/chat-settings.store";
+import { useI18n } from "@/src/lib/i18n";
 
 // Types for the chat data
 interface Message {
@@ -35,6 +37,10 @@ interface ChatData {
   error: string | null;
   setActiveConversation: (id: string) => void;
   sendMessage: (content: string) => Promise<boolean>;
+  sendAudioMessage?: (
+    audioBlob: Blob,
+    audioDuration: number
+  ) => Promise<boolean>;
   isSendingMessage: boolean;
   sendMessageError: string | null;
   createNewConversation: () => Promise<string | null>;
@@ -56,7 +62,7 @@ export function ConvexChatInterface({
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { sidebarCollapsed, setSidebarCollapsed } = useUISettings();
-
+  const { t } = useI18n();
   const {
     activeConversationId,
     activeConversation,
@@ -100,15 +106,26 @@ export function ConvexChatInterface({
     }
     // Handle conversation not found - redirect to chat home
     if (error && error.includes("Conversation not found")) {
-      toast.error("Conversation not found, redirecting to chat home");
+      toast.error(t("errors.conversationNotFound"));
       window.location.href = "/chat"; // Use window.location for immediate redirect
     }
-  }, [conversationsError, sendMessageError, error]);
+  }, [conversationsError, sendMessageError, error, t]);
 
   const handleSendMessage = async (content: string) => {
     const success = await sendMessage(content);
     if (!success) {
-      toast.error("Failed to send message. Please try again.");
+      toast.error(t("errors.failedToSendMessage"));
+    }
+  };
+
+  const handleSendAudio = async (audioBlob: Blob, audioDuration: number) => {
+    if (chatData.sendAudioMessage) {
+      const success = await chatData.sendAudioMessage(audioBlob, audioDuration);
+      if (!success) {
+        toast.error(t("errors.failedToSendAudioMessage"));
+      }
+    } else {
+      toast.error(t("errors.audioMessagingNotSupported"));
     }
   };
 
@@ -156,7 +173,7 @@ export function ConvexChatInterface({
 
     const conversationId = await createNewConversation();
     if (!conversationId) {
-      toast.error("Failed to create new conversation. Please try again.");
+      toast.error(t("errors.failedToCreateConversation"));
       return null;
     }
     if (isMobile) {
@@ -193,7 +210,7 @@ export function ConvexChatInterface({
             )}
             id="sidebar"
             role="complementary"
-            aria-label="Conversations sidebar"
+            aria-label={t("navigation.conversationsSidebar")}
             style={{
               // Ensure it's completely off-screen when closed
               transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
@@ -219,7 +236,7 @@ export function ConvexChatInterface({
           className="flex-shrink-0"
           id="sidebar"
           role="complementary"
-          aria-label="Conversations sidebar"
+          aria-label={t("navigation.conversationsSidebar")}
         >
           <Sidebar
             activeConversationId={activeConversationId}
@@ -241,7 +258,7 @@ export function ConvexChatInterface({
       <div
         className="flex-1 flex flex-col min-w-0 w-full"
         role="main"
-        aria-label="Chat main content"
+        aria-label={t("navigation.chatMainContent")}
       >
         {/* Chat Header */}
         <div className="flex items-center justify-between p-3 md:p-4 py-5 border-b-2 border-border bg-background flex-shrink-0">
@@ -257,7 +274,7 @@ export function ConvexChatInterface({
                   }
                 }}
                 className="flex-shrink-0"
-                aria-label="Open sidebar"
+                aria-label={t("navigation.openSidebar")}
                 aria-controls="sidebar"
               >
                 <svg
@@ -294,19 +311,19 @@ export function ConvexChatInterface({
             <Button
               onClick={handleNewConversation}
               disabled={isCreatingConversation}
-              aria-label="Start new conversation"
+              aria-label={t("navigation.startNewConversation")}
               className="hidden sm:flex"
             >
               {isCreatingConversation ? (
                 <span className="inline-block animate-spin">⟳</span>
               ) : (
-                "New Chat"
+                t("chat.newChat")
               )}
             </Button>
 
-            {/* Theme and Profile with better spacing */}
+            {/* Settings and Profile with better spacing */}
             <div className="flex items-center gap-3">
-              <ThemeSelector />
+              <SettingsDropdown />
               <UserProfileButton />
             </div>
           </div>
@@ -326,7 +343,7 @@ export function ConvexChatInterface({
               <Button
                 className="px-2 py-1 text-xs font-base bg-main text-main-foreground border-2 border-border rounded-base hover:shadow-shadow touch-manipulation flex-shrink-0"
                 onClick={clearAllErrors}
-                aria-label="Clear error"
+                aria-label={t("navigation.clearError")}
               >
                 Dismiss
               </Button>
@@ -347,11 +364,12 @@ export function ConvexChatInterface({
         <div className="flex-shrink-0 w-full">
           <MessageInput
             onSendMessage={handleSendMessage}
+            onSendAudio={handleSendAudio}
             disabled={isSendingMessage || isLoadingConversations}
             placeholder={
               isLoadingConversations
-                ? "Loading conversations..."
-                : "Type your message..."
+                ? t("chat.loadingConversations")
+                : t("chat.typeYourMessage")
             }
           />
         </div>

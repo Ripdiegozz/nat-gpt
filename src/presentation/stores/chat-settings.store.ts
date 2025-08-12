@@ -2,6 +2,57 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Code2, Zap, Sparkles, Brain } from "lucide-react";
 
+// Available TTS voices
+export const AVAILABLE_VOICES = {
+  "Angelo-PlayAI": {
+    id: "Angelo-PlayAI",
+    name: "Angelo",
+    provider: "PlayAI",
+    description: "Natural male voice",
+    gender: "male",
+  },
+  "Jennifer-PlayAI": {
+    id: "Jennifer-PlayAI",
+    name: "Jennifer",
+    provider: "PlayAI",
+    description: "Professional female voice",
+    gender: "female",
+  },
+  "Mitch-PlayAI": {
+    id: "Mitch-PlayAI",
+    name: "Mitch",
+    provider: "PlayAI",
+    description: "Casual male voice",
+    gender: "male",
+  },
+  "Atlas-PlayAI": {
+    id: "Atlas-PlayAI",
+    name: "Atlas",
+    provider: "PlayAI",
+    description: "Deep male voice",
+    gender: "male",
+  },
+} as const;
+
+export type VoiceId = keyof typeof AVAILABLE_VOICES;
+
+// Available transcription languages - ONLY English and Spanish
+export const AVAILABLE_TRANSCRIPTION_LANGUAGES = {
+  en: {
+    id: "en",
+    name: "🇺🇸 English",
+    description: "English transcription",
+  },
+  es: {
+    id: "es",
+    name: "🇪🇸 Español",
+    description: "Spanish transcription",
+  },
+} as const;
+
+export type TranscriptionLanguageId =
+  keyof typeof AVAILABLE_TRANSCRIPTION_LANGUAGES;
+
 // Available AI models
 export const AVAILABLE_MODELS = {
   // "qwen/qwen-2.5-32b-instruct": {
@@ -59,6 +110,11 @@ interface ChatSettings {
   language: string;
   sidebarCollapsed: boolean;
 
+  // Audio settings
+  selectedVoice: VoiceId;
+  enableTTS: boolean;
+  transcriptionLanguage: TranscriptionLanguageId;
+
   // Chat behavior settings
   autoSave: boolean;
   showTypingIndicator: boolean;
@@ -71,6 +127,9 @@ interface ChatSettings {
   setTemperature: (temp: number) => void;
   setLanguage: (language: string) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setSelectedVoice: (voice: VoiceId) => void;
+  setEnableTTS: (enable: boolean) => void;
+  setTranscriptionLanguage: (language: TranscriptionLanguageId) => void;
   setAutoSave: (autoSave: boolean) => void;
   setShowTypingIndicator: (show: boolean) => void;
   setEnableMarkdown: (enable: boolean) => void;
@@ -89,6 +148,8 @@ type ChatSettingsActions = {
   setTemperature: (temp: number) => void;
   setLanguage: (language: string) => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
+  setSelectedVoice: (voice: VoiceId) => void;
+  setEnableTTS: (enable: boolean) => void;
   setAutoSave: (autoSave: boolean) => void;
   setShowTypingIndicator: (show: boolean) => void;
   setEnableMarkdown: (enable: boolean) => void;
@@ -106,6 +167,9 @@ const DEFAULT_SETTINGS = {
   temperature: 0.7,
   language: "en",
   sidebarCollapsed: false,
+  selectedVoice: "Jennifer-PlayAI" as VoiceId,
+  enableTTS: true,
+  transcriptionLanguage: "en" as TranscriptionLanguageId,
   autoSave: true,
   showTypingIndicator: true,
   enableMarkdown: true,
@@ -133,6 +197,13 @@ export const useChatSettings = create<ChatSettings>()(
       setSidebarCollapsed: (collapsed: boolean) =>
         set({ sidebarCollapsed: collapsed }),
 
+      setSelectedVoice: (voice: VoiceId) => set({ selectedVoice: voice }),
+
+      setEnableTTS: (enable: boolean) => set({ enableTTS: enable }),
+
+      setTranscriptionLanguage: (language: TranscriptionLanguageId) =>
+        set({ transcriptionLanguage: language }),
+
       setAutoSave: (autoSave: boolean) => set({ autoSave }),
 
       setShowTypingIndicator: (show: boolean) =>
@@ -156,6 +227,9 @@ export const useChatSettings = create<ChatSettings>()(
         temperature: state.temperature,
         language: state.language,
         sidebarCollapsed: state.sidebarCollapsed,
+        selectedVoice: state.selectedVoice,
+        enableTTS: state.enableTTS,
+        transcriptionLanguage: state.transcriptionLanguage,
         autoSave: state.autoSave,
         showTypingIndicator: state.showTypingIndicator,
         enableMarkdown: state.enableMarkdown,
@@ -244,5 +318,37 @@ export const useChatBehaviorSettings = () => {
     setShowTypingIndicator,
     setEnableMarkdown,
     setEnableCodeHighlighting,
+  };
+};
+
+export const useAudioSettings = () => {
+  const {
+    selectedVoice,
+    enableTTS,
+    transcriptionLanguage,
+    setSelectedVoice,
+    setEnableTTS,
+    setTranscriptionLanguage,
+  } = useChatSettings();
+
+  // Fallback to first available voice if current selection is invalid
+  const validVoice = AVAILABLE_VOICES[selectedVoice]
+    ? selectedVoice
+    : (Object.keys(AVAILABLE_VOICES)[0] as VoiceId);
+  const voice = AVAILABLE_VOICES[validVoice];
+
+  // Update to valid voice if current is invalid
+  if (selectedVoice !== validVoice) {
+    setSelectedVoice(validVoice);
+  }
+
+  return {
+    selectedVoice: validVoice,
+    enableTTS,
+    transcriptionLanguage,
+    setSelectedVoice,
+    setEnableTTS,
+    setTranscriptionLanguage,
+    voice,
   };
 };

@@ -2,8 +2,11 @@ import React from "react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageDTO } from "../../../application/dtos/message.dto";
-import { User, Bot } from "lucide-react";
+import { User, Bot, Mic } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
+import { TextToSpeech } from "./text-to-speech";
+import { AudioPlayer } from "../common/audio-player";
+import { useI18n } from "@/src/lib/i18n";
 
 interface MessageProps {
   message: MessageDTO;
@@ -11,6 +14,7 @@ interface MessageProps {
 }
 
 export function Message({ message, className }: MessageProps) {
+  const { t } = useI18n();
   const isUser = message.role === "user";
   const { user } = useUser();
 
@@ -22,14 +26,14 @@ export function Message({ message, className }: MessageProps) {
         className
       )}
       role="article"
-      aria-label={`${isUser ? "User" : "Assistant"} message`}
+      aria-label={isUser ? t("chat.userMessage") : t("chat.assistantMessage")}
     >
       {/* Avatar */}
       <Avatar className="h-8 w-8 shrink-0">
         {isUser && user?.imageUrl && (
           <AvatarImage
             src={user.imageUrl}
-            alt={user.fullName || user.username || "User"}
+            alt={user.fullName || user.username || t("common.user")}
           />
         )}
         <AvatarFallback
@@ -53,19 +57,52 @@ export function Message({ message, className }: MessageProps) {
             : "bg-secondary-background text-foreground border border-border rounded-bl-md"
         )}
       >
-        <div className="text-sm font-base whitespace-pre-wrap break-words">
-          <MessageContent content={message.content} />
-        </div>
+        {/* Audio content */}
+        {message.audioUrl && (
+          <div className="mb-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Mic className="h-4 w-4 opacity-60" />
+              <span className="text-xs opacity-60">
+                {message.audioMetadata?.transcribed
+                  ? t("chat.transcribedAudioMessage")
+                  : t("chat.audioMessage")}
+                {message.audioMetadata?.duration &&
+                  ` (${Math.round(message.audioMetadata.duration)}s)`}
+              </span>
+            </div>
+            <AudioPlayer
+              src={message.audioUrl}
+              showDownload={true}
+              className="bg-background/50"
+              duration={message.audioMetadata?.duration}
+            />
+          </div>
+        )}
+
+        {/* Text content */}
+        {message.content && (
+          <div className="text-sm font-base whitespace-pre-wrap break-words">
+            <MessageContent content={message.content} />
+          </div>
+        )}
+
         <div
           className={cn(
-            "text-xs mt-2 flex",
-            isUser ? "justify-end opacity-70" : "justify-start opacity-60"
+            "text-xs mt-2 flex items-center",
+            isUser ? "justify-end opacity-70" : "justify-between opacity-60"
           )}
         >
-          {new Date(message.timestamp).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
+          <span>
+            {new Date(message.timestamp).toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
+
+          {/* TTS button for assistant messages only */}
+          {!isUser && message.content && (
+            <TextToSpeech text={message.content} className="ml-2" size="sm" />
+          )}
         </div>
       </div>
     </div>
