@@ -85,12 +85,12 @@ export function useConvexChat() {
         console.log("🎤 [CLIENT] Preparing audio for transcription:", {
           blobSize: audioBlob.size,
           blobType: audioBlob.type,
-          sizeInMB: (audioBlob.size / 1024 / 1024).toFixed(2)
+          sizeInMB: (audioBlob.size / 1024 / 1024).toFixed(2),
         });
 
         const formData = new FormData();
         formData.append("audio", audioBlob, "recording.webm");
-        
+
         // Add selected language for transcription
         const languageCode = getTranscriptionCode(transcriptionLanguage);
         formData.append("language", languageCode);
@@ -105,7 +105,7 @@ export function useConvexChat() {
         console.log("🎤 [CLIENT] Transcription response:", {
           status: transcribeResponse.status,
           statusText: transcribeResponse.statusText,
-          ok: transcribeResponse.ok
+          ok: transcribeResponse.ok,
         });
 
         if (!transcribeResponse.ok) {
@@ -119,7 +119,7 @@ export function useConvexChat() {
           hasText: !!transcriptionResult.text,
           textLength: transcriptionResult.text?.length || 0,
           language: transcriptionResult.language,
-          duration: transcriptionResult.duration
+          duration: transcriptionResult.duration,
         });
 
         const { text: transcribedText } = transcriptionResult;
@@ -135,15 +135,17 @@ export function useConvexChat() {
 
         // If no active conversation, create a new one
         if (!conversationId) {
-          const title = transcribedText.length > 50 
-            ? transcribedText.substring(0, 50) + "..." 
-            : transcribedText;
+          const title =
+            transcribedText.length > 50
+              ? transcribedText.substring(0, 50) + "..."
+              : transcribedText;
           conversationId = await createNewConversation(title);
           setActiveConversationId(conversationId);
           isNewConversation = true;
         } else {
           // Check if the active conversation is empty (should generate title)
-          const currentMessages = ConvexMessageAdapter.toDomainMessages(convexMessages);
+          const currentMessages =
+            ConvexMessageAdapter.toDomainMessages(convexMessages);
           if (currentMessages.length === 0) {
             isNewConversation = true;
           }
@@ -169,7 +171,11 @@ export function useConvexChat() {
         const aiResponse = await aiService.generateResponse(
           transcribedText,
           contextMessages,
-          { model: selectedModel, isFirstMessage: isNewConversation }
+          {
+            model: selectedModel,
+            isFirstMessage: isNewConversation,
+            fromAudio: true,
+          }
         );
 
         // Add AI response
@@ -224,7 +230,8 @@ export function useConvexChat() {
   // Send message with AI response
   const sendMessage = useCallback(
     async (
-      content: string
+      content: string,
+      fromAudio = false
     ): Promise<{
       success: boolean;
       conversationId?: string;
@@ -278,7 +285,7 @@ export function useConvexChat() {
         const aiResponse = await aiService.generateResponse(
           content,
           contextMessages,
-          { model: selectedModel, isFirstMessage: isNewConversation }
+          { model: selectedModel, isFirstMessage: isNewConversation, fromAudio }
         );
 
         // Add AI response using direct mutation

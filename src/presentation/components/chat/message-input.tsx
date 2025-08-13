@@ -11,7 +11,7 @@ import type { AudioRecording } from "../../hooks/use-audio-recorder";
 import { useI18n } from "@/src/lib/i18n";
 
 interface MessageInputProps {
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, fromAudio?: boolean) => void;
   onSendAudio?: (audioBlob: Blob, audioDuration: number) => void;
   disabled?: boolean;
   placeholder?: string;

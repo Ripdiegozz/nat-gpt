@@ -23,7 +23,7 @@ export class ClientAIServiceAdapter implements AIService {
   async generateResponse(
     prompt: string,
     context: Message[] | AIContextMessage[],
-    options?: { model?: string; isFirstMessage?: boolean }
+    options?: { model?: string; isFirstMessage?: boolean; fromAudio?: boolean }
   ): Promise<string> {
     if (!prompt.trim()) throw new Error("Prompt cannot be empty");
 
@@ -45,6 +45,7 @@ export class ClientAIServiceAdapter implements AIService {
       prompt,
       context: contextMessages,
       isFirstMessage: options?.isFirstMessage || false,
+      fromAudio: options?.fromAudio || false,
       ...(options?.model && { model: options.model }),
     };
 

@@ -68,6 +68,7 @@ type PostBody = {
   context?: Array<{ role: "user" | "assistant"; content: string }>;
   model?: string;
   isFirstMessage?: boolean; // Flag to indicate if this is the first message in a conversation
+  fromAudio?: boolean; // Flag to indicate if this message comes from audio transcription
 };
 
 export async function POST(req: NextRequest) {
@@ -85,7 +86,8 @@ export async function POST(req: NextRequest) {
       prompt,
       context = [],
       model,
-      isFirstMessage = false
+      isFirstMessage = false,
+      fromAudio = false,
     } = (await req.json()) as PostBody;
 
     if (!prompt || !prompt.trim()) {
@@ -100,7 +102,18 @@ export async function POST(req: NextRequest) {
 
     // Use the system prompt and modify for first message if needed
     let systemPrompt = await getSystemPrompt();
-    
+
+    // For messages from audio transcription, add special instructions
+    if (fromAudio) {
+      systemPrompt += `\n\nIMPORTANT: This message comes from audio transcription. The user spoke their request and it was converted to text. Please follow these guidelines:
+- DO NOT mention that you cannot process audio or hear sounds - you ARE receiving the transcribed text
+- DO NOT acknowledge microphone tests or audio setup statements like "this is a test of my microphone"
+- IGNORE any phrases about testing audio/microphone functionality 
+- FOCUS ONLY on answering the actual user question or request in the transcribed text
+- Respond naturally as if the user typed their message directly
+- If the transcription only contains microphone test phrases with no real question, politely ask what you can help them with`;
+    }
+
     // For first messages, add title generation instruction
     if (isFirstMessage) {
       systemPrompt += `\n\nIMPORTANT: Since this is the first message in a new conversation, please start your response with a conversation title on the first line in the format "Title: [Your Title Here]" followed by a blank line, then your main response. The title should be concise (2-6 words) and capture the main topic or question.`;

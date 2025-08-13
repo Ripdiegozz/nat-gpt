@@ -36,7 +36,7 @@ interface ChatData {
   conversationsError: string | null;
   error: string | null;
   setActiveConversation: (id: string) => void;
-  sendMessage: (content: string) => Promise<boolean>;
+  sendMessage: (content: string, fromAudio?: boolean) => Promise<boolean>;
   sendAudioMessage?: (
     audioBlob: Blob,
     audioDuration: number
@@ -111,8 +111,8 @@ export function ConvexChatInterface({
     }
   }, [conversationsError, sendMessageError, error, t]);
 
-  const handleSendMessage = async (content: string) => {
-    const success = await sendMessage(content);
+  const handleSendMessage = async (content: string, fromAudio = false) => {
+    const success = await sendMessage(content, fromAudio);
     if (!success) {
       toast.error(t("errors.failedToSendMessage"));
     }
